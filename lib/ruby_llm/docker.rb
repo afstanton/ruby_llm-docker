@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "docker/version"
+require_relative 'docker/version'
 
 module RubyLlm
   module Docker
