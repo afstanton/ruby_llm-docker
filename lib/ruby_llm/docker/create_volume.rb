@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for creating Docker volumes.
+    # RubyLLM tool for creating Docker volumes.
     #
     # This tool provides the ability to create persistent Docker volumes for
     # data storage that survives container lifecycle events. Volumes are the
@@ -89,7 +89,7 @@ module RubyLLM
       # and can be shared between multiple containers.
       #
       # @param name [String] name for the new volume
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param driver [String] volume driver to use (default: "local")
       #
       # @return [RubyLLM::Tool::Response] volume creation results

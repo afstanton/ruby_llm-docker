@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for building Docker images from Dockerfile content.
+    # RubyLLM tool for building Docker images from Dockerfile content.
     #
     # This tool provides the ability to build Docker images by providing Dockerfile
     # content as a string. It supports optional tagging of the resulting image for
@@ -65,7 +65,7 @@ module RubyLLM
       # can be tagged with a custom name for easy reference.
       #
       # @param dockerfile [String] the complete Dockerfile content as a string
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param tag [String, nil] optional tag to apply to the built image
       #
       # @return [RubyLLM::Tool::Response] build results including image ID and tag info

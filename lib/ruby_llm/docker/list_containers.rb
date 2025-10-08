@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for listing Docker containers.
+    # RubyLLM tool for listing Docker containers.
     #
     # This tool provides functionality to list all Docker containers on the system,
     # including both running and stopped containers. It returns detailed information
@@ -41,7 +41,7 @@ module RubyLLM
       # - Volume mounts
       # - Creation and status timestamps
       #
-      # @param server_context [Object] the MCP server context (unused but required)
+      # @param server_context [Object] the RubyLLM context (unused but required)
       # @param all [Boolean] whether to show all containers (default: true)
       # @return [RubyLLM::Tool::Response] response containing container information
       #

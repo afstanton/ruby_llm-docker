@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for removing Docker images.
+    # RubyLLM tool for removing Docker images.
     #
     # This tool provides the ability to permanently delete Docker images from
     # the local system to free up disk space and remove unused images. It
@@ -98,7 +98,7 @@ module RubyLLM
       # dependent containers. Force removal bypasses these checks.
       #
       # @param id [String] image ID, name, or name:tag to remove
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param force [Boolean] whether to force removal despite dependencies (default: false)
       # @param noprune [Boolean] whether to preserve parent images (default: false)
       #

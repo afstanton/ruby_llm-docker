@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for copying files and directories from host to Docker containers.
+    # RubyLLM tool for copying files and directories from host to Docker containers.
     #
     # This tool provides the ability to copy files or entire directory trees from
     # the host filesystem into running Docker containers. It uses Docker's archive
@@ -74,13 +74,13 @@ module RubyLLM
       # changed after the copy operation completes.
       #
       # The source path must exist on the host filesystem and be readable by the
-      # process running the MCP server. The destination path must be a valid path
+      # process running the application. The destination path must be a valid path
       # within the container.
       #
       # @param id [String] container ID or name to copy files into
       # @param source_path [String] path to file/directory on host filesystem
       # @param destination_path [String] destination path inside container
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param owner [String, nil] ownership specification (e.g., "user:group", "1000:1000")
       #
       # @return [RubyLLM::Tool::Response] success/failure message with operation details

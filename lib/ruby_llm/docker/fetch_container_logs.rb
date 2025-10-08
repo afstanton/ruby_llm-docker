@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for retrieving Docker container logs.
+    # RubyLLM tool for retrieving Docker container logs.
     #
     # This tool provides access to container logs with flexible filtering and
     # formatting options. It can retrieve both stdout and stderr logs with
@@ -84,7 +84,7 @@ module RubyLLM
       # quantity (tail). The logs are returned as a text response.
       #
       # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param stdout [Boolean] whether to include stdout logs (default: true)
       # @param stderr [Boolean] whether to include stderr logs (default: true)
       # @param tail [Integer, nil] number of recent lines to return (nil for all)

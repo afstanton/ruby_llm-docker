@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for listing Docker images.
+    # RubyLLM tool for listing Docker images.
     #
     # This tool provides functionality to list all Docker images available on
     # the local system. It returns comprehensive information about each image

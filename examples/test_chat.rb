@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Test script for docker_chat.rb
-# This verifies the basic functionality without requiring OpenAI API
+# Test script for RubyLLM Docker Tools
+# This verifies that all Docker tools load correctly and the chat system works
+# without requiring an OpenAI API key or active Docker daemon
 
 require_relative '../lib/ruby_llm/docker'
 

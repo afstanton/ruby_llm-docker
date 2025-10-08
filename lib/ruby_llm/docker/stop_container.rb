@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for stopping running Docker containers.
+    # RubyLLM tool for stopping running Docker containers.
     #
     # This tool provides the ability to gracefully stop running Docker containers
     # with configurable timeout handling. It sends a SIGTERM signal to the main
@@ -72,7 +72,7 @@ module RubyLLM
       # typically succeeds without error.
       #
       # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param timeout [Integer] seconds to wait before force killing (default: 10)
       #
       # @return [RubyLLM::Tool::Response] stop operation results

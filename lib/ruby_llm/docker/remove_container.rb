@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for removing Docker containers.
+    # RubyLLM tool for removing Docker containers.
     #
     # This tool provides the ability to permanently delete Docker containers
     # from the system. It supports both graceful removal of stopped containers
@@ -76,7 +76,7 @@ module RubyLLM
       # anonymous volumes.
       #
       # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param force [Boolean] whether to force remove running containers (default: false)
       # @param volumes [Boolean] whether to remove associated volumes (default: false)
       #

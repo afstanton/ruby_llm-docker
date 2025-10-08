@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for executing commands inside running Docker containers.
+    # RubyLLM tool for executing commands inside running Docker containers.
     #
     # This tool provides the ability to execute arbitrary commands inside running
     # Docker containers, with full control over execution environment including
@@ -67,7 +67,8 @@ module RubyLLM
       param :working_dir, type: :string, desc: 'Working directory for the command (optional)', required: false
       param :user, type: :string, desc: 'User to run the command as (optional, e.g., "1000" or "username")',
                    required: false
-      param :env, type: :array, desc: 'Environment variables as KEY=VALUE (optional)', required: false
+      param :env, type: :string,
+                  desc: 'Environment variables as comma-separated KEY=VALUE pairs (optional, e.g., "VAR1=value1,VAR2=value2")', required: false
       param :stdin, type: :string, desc: 'Input to send to the command via stdin (optional)', required: false
       param :timeout, type: :integer, desc: 'Timeout in seconds (optional, default: 60)', required: false
 
@@ -83,10 +84,10 @@ module RubyLLM
       #
       # @param id [String] container ID or name to execute command in
       # @param cmd [String] command to execute (shell-parsed into arguments)
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param working_dir [String, nil] working directory for command execution
       # @param user [String, nil] user to run command as (username or UID)
-      # @param env [Array<String>, nil] environment variables in KEY=VALUE format
+      # @param env [String, nil] environment variables as comma-separated KEY=VALUE pairs
       # @param stdin [String, nil] input to send to command via stdin
       # @param timeout [Integer] maximum execution time in seconds (default: 60)
       #
@@ -120,8 +121,11 @@ module RubyLLM
 
         # Parse command string into array
         # Simple shell-like parsing: split on spaces but respect quoted strings
-
         cmd_array = Shellwords.split(cmd)
+
+        # Parse environment variables string into array if provided
+        env_array = nil
+        env_array = env.split(',').map(&:strip).select { |e| e.include?('=') } if env && !env.empty?
 
         # Build exec options
         exec_options = {
@@ -131,7 +135,7 @@ module RubyLLM
         }
         exec_options['WorkingDir'] = working_dir if working_dir
         exec_options['User'] = user if user
-        exec_options['Env'] = env if env
+        exec_options['Env'] = env_array if env_array
         exec_options['AttachStdin'] = true if stdin
 
         # Execute the command

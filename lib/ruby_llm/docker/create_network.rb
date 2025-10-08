@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for creating Docker networks.
+    # RubyLLM tool for creating Docker networks.
     #
     # This tool provides the ability to create custom Docker networks for
     # container communication and isolation. Networks enable containers to
@@ -89,7 +89,7 @@ module RubyLLM
       # communication.
       #
       # @param name [String] name for the new network
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param driver [String] network driver to use (default: "bridge")
       # @param check_duplicate [Boolean] whether to check for duplicate names (default: true)
       #

@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for pulling Docker images from registries.
+    # RubyLLM tool for pulling Docker images from registries.
     #
     # This tool provides the ability to download Docker images from Docker
     # registries (like Docker Hub) to the local system. It supports flexible
@@ -80,7 +80,7 @@ module RubyLLM
       # feedback on the pull operation status.
       #
       # @param from_image [String] image name (may include registry and tag)
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param tag [String, nil] specific tag to pull (overrides tag in from_image)
       #
       # @return [RubyLLM::Tool::Response] pull operation results with image ID

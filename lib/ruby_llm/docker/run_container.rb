@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for running Docker containers (create and start in one operation).
+    # RubyLLM tool for running Docker containers (create and start in one operation).
     #
     # This tool provides a convenient way to create and immediately start Docker
     # containers from images. It combines the functionality of container creation
@@ -65,7 +65,8 @@ module RubyLLM
       param :image, desc: 'Image name to use (e.g., "ubuntu:22.04")'
       param :name, desc: 'Container name (optional)', required: false
       param :cmd, desc: 'Command to run (optional)', required: false
-      param :env, desc: 'Environment variables as KEY=VALUE (optional)', required: false
+      param :env,
+            desc: 'Environment variables as comma-separated KEY=VALUE pairs (optional, e.g., "VAR1=value1,VAR2=value2")', required: false
       param :exposed_ports, desc: 'Exposed ports as JSON object (optional)', required: false
       param :host_config, desc: 'Host configuration including port bindings, volumes, etc.',
                           required: false
@@ -74,7 +75,13 @@ module RubyLLM
         config = { 'Image' => image }
         config['name'] = name if name
         config['Cmd'] = cmd if cmd
-        config['Env'] = env if env
+
+        # Parse environment variables string into array if provided
+        if env && !env.empty?
+          env_array = env.split(',').map(&:strip).select { |e| e.include?('=') }
+          config['Env'] = env_array unless env_array.empty?
+        end
+
         config['ExposedPorts'] = exposed_ports if exposed_ports
         config['HostConfig'] = host_config if host_config
 

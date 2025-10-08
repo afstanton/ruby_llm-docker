@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for creating Docker containers without starting them.
+    # RubyLLM tool for creating Docker containers without starting them.
     #
     # This tool provides the ability to create Docker containers from images with
     # comprehensive configuration options. Unlike RunContainer, this tool only
@@ -48,7 +48,7 @@ module RubyLLM
     #     server_context: context,
     #     image: "postgres:13",
     #     name: "database",
-    #     env: ["POSTGRES_PASSWORD=secret", "POSTGRES_DB=myapp"],
+    #     env: "POSTGRES_PASSWORD=secret,POSTGRES_DB=myapp",
     #     exposed_ports: {"5432/tcp" => {}},
     #     host_config: {
     #       "PortBindings" => {"5432/tcp" => [{"HostPort" => "5432"}]},
@@ -66,7 +66,8 @@ module RubyLLM
       param :image, desc: 'Image name to use (e.g., "ubuntu:22.04")'
       param :name, desc: 'Container name (optional)', required: false
       param :cmd, desc: 'Command to run (optional)', required: false
-      param :env, desc: 'Environment variables as KEY=VALUE (optional)', required: false
+      param :env,
+            desc: 'Environment variables as comma-separated KEY=VALUE pairs (optional, e.g., "VAR1=value1,VAR2=value2")', required: false
       param :exposed_ports, desc: 'Exposed ports as JSON object (optional)', required: false
       param :host_config, desc: 'Host configuration including port bindings, volumes, etc. as JSON object (optional)',
                           required: false
@@ -79,10 +80,10 @@ module RubyLLM
       # for the base image.
       #
       # @param image [String] Docker image name with optional tag (e.g., "nginx:latest")
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param name [String, nil] custom name for the container
-      # @param cmd [Array<String>, nil] command to execute in the container
-      # @param env [Array<String>, nil] environment variables in KEY=VALUE format
+      # @param cmd [String, nil] command to execute in the container
+      # @param env [String, nil] environment variables as comma-separated KEY=VALUE pairs
       # @param exposed_ports [Hash, nil] ports to expose in {"port/protocol" => {}} format
       # @param host_config [Hash, nil] Docker host configuration including bindings and volumes
       #
@@ -104,7 +105,7 @@ module RubyLLM
       #     server_context: context,
       #     image: "redis:7-alpine",
       #     name: "redis-cache",
-      #     env: ["REDIS_PASSWORD=secret"],
+      #     env: "REDIS_PASSWORD=secret",
       #     exposed_ports: {"6379/tcp" => {}},
       #     host_config: {
       #       "PortBindings" => {"6379/tcp" => [{"HostPort" => "6379"}]},
@@ -117,7 +118,13 @@ module RubyLLM
         config = { 'Image' => image }
         config['name'] = name if name
         config['Cmd'] = cmd if cmd
-        config['Env'] = env if env
+
+        # Parse environment variables string into array if provided
+        if env && !env.empty?
+          env_array = env.split(',').map(&:strip).select { |e| e.include?('=') }
+          config['Env'] = env_array unless env_array.empty?
+        end
+
         config['ExposedPorts'] = exposed_ports if exposed_ports
         config['HostConfig'] = host_config if host_config
 

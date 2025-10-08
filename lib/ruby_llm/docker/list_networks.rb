@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for listing Docker networks.
+    # RubyLLM tool for listing Docker networks.
     #
     # This tool provides functionality to list all Docker networks available on
     # the system, including built-in networks (bridge, host, none) and custom

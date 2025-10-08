@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for listing Docker volumes.
+    # RubyLLM tool for listing Docker volumes.
     #
     # This tool provides functionality to list all Docker volumes on the system,
     # including both named volumes and anonymous volumes. It returns comprehensive

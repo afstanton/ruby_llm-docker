@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for recreating Docker containers with the same configuration.
+    # RubyLLM tool for recreating Docker containers with the same configuration.
     #
     # This tool provides a convenient way to recreate containers while preserving
     # their original configuration. It stops and removes the existing container,
@@ -86,7 +86,7 @@ module RubyLLM
       # settings as the original.
       #
       # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param timeout [Integer] seconds to wait before force killing during stop (default: 10)
       #
       # @return [RubyLLM::Tool::Response] recreation results with new container ID

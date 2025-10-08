@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for removing Docker networks.
+    # RubyLLM tool for removing Docker networks.
     #
     # This tool provides the ability to permanently delete Docker networks from
     # the system. It safely removes custom networks while protecting built-in
@@ -86,7 +86,7 @@ module RubyLLM
       # networks cannot be removed.
       #
       # @param id [String] network ID or name to remove
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       #
       # @return [RubyLLM::Tool::Response] removal operation results
       #

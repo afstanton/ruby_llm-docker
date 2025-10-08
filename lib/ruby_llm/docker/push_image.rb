@@ -5,7 +5,7 @@ require 'open3'
 
 module RubyLLM
   module Docker
-    # MCP tool for pushing Docker images to registries.
+    # RubyLLM tool for pushing Docker images to registries.
     #
     # This tool provides the ability to upload Docker images to Docker registries
     # such as Docker Hub, private registries, or cloud-based container registries.
@@ -89,7 +89,7 @@ module RubyLLM
       # properly tagged for registry compatibility.
       #
       # @param name [String] image name or ID to push
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param tag [String, nil] specific tag to push
       # @param repo_tag [String, nil] complete repository:tag specification
       #

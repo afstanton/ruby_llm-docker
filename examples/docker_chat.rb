@@ -1,10 +1,16 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Docker Chat - Interactive command line tool
-# A comprehensive chat interface with all Docker tools available
+# Docker Chat - Interactive command line tool for RubyLLM
+# A comprehensive chat interface with all Docker management tools available
+# through natural language interaction powered by OpenAI and RubyLLM
+#
+# Prerequisites:
+#   - Set OPENAI_API_KEY environment variable
+#   - Docker daemon running and accessible
 #
 # Usage:
+#   export OPENAI_API_KEY='your-key-here'
 #   ruby examples/docker_chat.rb
 #
 # Commands:

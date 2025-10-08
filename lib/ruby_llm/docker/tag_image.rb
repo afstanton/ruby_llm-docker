@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for tagging Docker images.
+    # RubyLLM tool for tagging Docker images.
     #
     # This tool provides the ability to create new tags for existing Docker images,
     # enabling better organization, versioning, and distribution of images. Tags
@@ -97,7 +97,7 @@ module RubyLLM
       #
       # @param id [String] image ID or current name:tag to tag
       # @param repo [String] repository name for the new tag
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       # @param tag [String] tag name for the image (default: "latest")
       # @param force [Boolean] whether to overwrite existing tags (default: true)
       #

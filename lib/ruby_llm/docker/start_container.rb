@@ -2,7 +2,7 @@
 
 module RubyLLM
   module Docker
-    # MCP tool for starting existing Docker containers.
+    # RubyLLM tool for starting existing Docker containers.
     #
     # This tool provides the ability to start Docker containers that have been
     # created but are currently stopped. It's the counterpart to StopContainer
@@ -62,7 +62,7 @@ module RubyLLM
       # command without error.
       #
       # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] MCP server context (unused but required)
+      # @param server_context [Object] RubyLLM context (unused but required)
       #
       # @return [RubyLLM::Tool::Response] start operation results
       #
