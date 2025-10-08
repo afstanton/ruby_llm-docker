@@ -73,20 +73,15 @@ module RubyLLM
       # automatically by containers. The information includes comprehensive
       # metadata for each volume.
       #
-      # @param args [Array] variable arguments (unused but accepted for compatibility)
-      #
-      # @return [RubyLLM::Tool::Response] comprehensive volume information
+      # @return [String] comprehensive volume information
       #
       # @example List all volumes
-      #   response = ListVolumes.call
+      #   response = tool.execute
       #   # Returns detailed info for all Docker volumes
       #
       # @see Docker::Volume.all
-      def self.call(*)
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: Docker::Volume.all.map(&:info).to_s
-                                    }])
+      def execute
+        ::Docker::Volume.all.map(&:info).to_s
       end
     end
   end

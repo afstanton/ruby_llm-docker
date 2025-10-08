@@ -58,27 +58,13 @@ module RubyLLM
       description 'Copy a file or directory from the local filesystem into a running Docker container. ' \
                   'The source path is on the local machine, and the destination path is inside the container.'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          },
-          source_path: {
-            type: 'string',
-            description: 'Path to the file or directory on the local filesystem to copy'
-          },
-          destination_path: {
-            type: 'string',
-            description: 'Path inside the container where the file/directory should be copied'
-          },
-          owner: {
-            type: 'string',
-            description: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")'
-          }
-        },
-        required: %w[id source_path destination_path]
-      )
+      param :id, type: :string, description: 'Container ID or name'
+      param :source_path, type: :string, description: 'Path to the file or directory on the local filesystem to copy'
+      param :destination_path, type: :string,
+                               description: 'Path inside the container where the file/directory should be copied'
+      param :owner, type: :string,
+                    description: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")',
+                    required: false
 
       # Copy files or directories from host filesystem to a Docker container.
       #
@@ -111,8 +97,7 @@ module RubyLLM
       #   )
       #
       # @example Copy directory with ownership
-      #   response = CopyToContainer.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "app-container",
       #     source_path: "/local/project",
       #     destination_path: "/app/",
@@ -121,23 +106,18 @@ module RubyLLM
       #
       # @see Docker::Container#archive_in_stream
       # @see #add_to_tar
-      def self.call(id:, source_path:, destination_path:, server_context:, owner: nil)
-        container = Docker::Container.get(id)
+      def execute(id:, source_path:, destination_path:, owner: nil)
+        container = ::Docker::Container.get(id)
 
         # Verify source path exists
-        unless File.exist?(source_path)
-          return RubyLLM::Tool::Response.new([{
-                                               type: 'text',
-                                               text: "Source path not found: #{source_path}"
-                                             }])
-        end
+        return "Source path not found: #{source_path}" unless File.exist?(source_path)
 
         # Create a tar archive of the source
         tar_io = StringIO.new
         tar_io.set_encoding('ASCII-8BIT')
 
         Gem::Package::TarWriter.new(tar_io) do |tar|
-          add_to_tar(tar, source_path, File.basename(source_path))
+          self.class.add_to_tar(tar, source_path, File.basename(source_path))
         end
 
         tar_io.rewind
@@ -157,20 +137,11 @@ module RubyLLM
         response_text = "Successfully copied #{file_type} from #{source_path} to #{id}:#{destination_path}"
         response_text += "\nOwnership changed to #{owner}" if owner
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: response_text
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        response_text
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error copying to container: #{e.message}"
-                                    }])
+        "Error copying to container: #{e.message}"
       end
 
       # Recursively add files and directories to a tar archive.

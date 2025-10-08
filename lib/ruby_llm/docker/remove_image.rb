@@ -87,23 +87,9 @@ module RubyLLM
     class RemoveImage < RubyLLM::Tool
       description 'Remove a Docker image'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Image ID, name, or name:tag'
-          },
-          force: {
-            type: 'boolean',
-            description: 'Force removal of the image (default: false)'
-          },
-          noprune: {
-            type: 'boolean',
-            description: 'Do not delete untagged parents (default: false)'
-          }
-        },
-        required: ['id']
-      )
+      param :id, type: :string, description: 'Image ID, name, or name:tag'
+      param :force, type: :boolean, description: 'Force removal of the image (default: false)', required: false
+      param :noprune, type: :boolean, description: 'Do not delete untagged parents (default: false)', required: false
 
       # Remove a Docker image from the local system.
       #
@@ -135,31 +121,21 @@ module RubyLLM
       #   )
       #
       # @example Remove while preserving layers
-      #   response = RemoveImage.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "temp-image:build-123",
       #     noprune: true
       #   )
       #
       # @see Docker::Image#remove
-      def self.call(id:, server_context:, force: false, noprune: false)
-        image = Docker::Image.get(id)
+      def execute(id:, force: false, noprune: false)
+        image = ::Docker::Image.get(id)
         image.remove(force: force, noprune: noprune)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image #{id} removed successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image #{id} not found"
-                                    }])
+        "Image #{id} removed successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Image #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error removing image: #{e.message}"
-                                    }])
+        "Error removing image: #{e.message}"
       end
     end
   end

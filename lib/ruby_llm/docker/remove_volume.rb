@@ -81,19 +81,8 @@ module RubyLLM
     class RemoveVolume < RubyLLM::Tool
       description 'Remove a Docker volume'
 
-      input_schema(
-        properties: {
-          name: {
-            type: 'string',
-            description: 'Volume name'
-          },
-          force: {
-            type: 'boolean',
-            description: 'Force removal of the volume (default: false)'
-          }
-        },
-        required: ['name']
-      )
+      param :name, type: :string, description: 'Volume name'
+      param :force, type: :boolean, description: 'Force removal of the volume (default: false)', required: false
 
       # Remove a Docker volume permanently from the system.
       #
@@ -117,31 +106,21 @@ module RubyLLM
       #   )
       #
       # @example Force remove problematic volume
-      #   response = RemoveVolume.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     name: "corrupted-volume",
       #     force: true
       #   )
       #
       # @see Docker::Volume#remove
-      def self.call(name:, server_context:, force: false)
-        volume = Docker::Volume.get(name)
+      def execute(name:, force: false)
+        volume = ::Docker::Volume.get(name)
         volume.remove(force: force)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Volume #{name} removed successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Volume #{name} not found"
-                                    }])
+        "Volume #{name} removed successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Volume #{name} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error removing volume: #{e.message}"
-                                    }])
+        "Error removing volume: #{e.message}"
       end
     end
   end

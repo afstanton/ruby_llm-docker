@@ -54,19 +54,8 @@ module RubyLLM
     class BuildImage < RubyLLM::Tool
       description 'Build a Docker image'
 
-      input_schema(
-        properties: {
-          dockerfile: {
-            type: 'string',
-            description: 'Dockerfile content as a string'
-          },
-          tag: {
-            type: 'string',
-            description: 'Tag for the built image (e.g., "myimage:latest")'
-          }
-        },
-        required: ['dockerfile']
-      )
+      param :dockerfile, type: :string, description: 'Dockerfile content as a string'
+      param :tag, type: :string, description: 'Tag for the built image (e.g., "myimage:latest")', required: false
 
       # Build a Docker image from Dockerfile content.
       #
@@ -92,16 +81,15 @@ module RubyLLM
       #     CMD ["nginx", "-g", "daemon off;"]
       #   DOCKERFILE
       #
-      #   response = BuildImage.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     dockerfile: dockerfile,
       #     tag: "my-nginx:latest"
       #   )
       #
       # @see Docker::Image.build
-      def self.call(dockerfile:, server_context:, tag: nil)
+      def execute(dockerfile:, tag: nil)
         # Build the image
-        image = Docker::Image.build(dockerfile)
+        image = ::Docker::Image.build(dockerfile)
 
         # If a tag was specified, tag the image
         if tag
@@ -114,15 +102,9 @@ module RubyLLM
         response_text = "Image built successfully. ID: #{image.id}"
         response_text += ", Tag: #{tag}" if tag
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: response_text
-                                    }])
+        response_text
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error building image: #{e.message}"
-                                    }])
+        "Error building image: #{e.message}"
       end
     end
   end

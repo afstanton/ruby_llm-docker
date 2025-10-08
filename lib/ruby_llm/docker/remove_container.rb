@@ -64,23 +64,9 @@ module RubyLLM
     class RemoveContainer < RubyLLM::Tool
       description 'Remove a Docker container'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          },
-          force: {
-            type: 'boolean',
-            description: 'Force removal of running container (default: false)'
-          },
-          volumes: {
-            type: 'boolean',
-            description: 'Remove associated volumes (default: false)'
-          }
-        },
-        required: ['id']
-      )
+      param :id, desc: 'Container ID or name'
+      param :force, type: :boolean, desc: 'Force removal of running container (default: false)', required: false
+      param :volumes, type: :boolean, desc: 'Remove associated volumes (default: false)', required: false
 
       # Remove a Docker container permanently.
       #
@@ -113,31 +99,21 @@ module RubyLLM
       #   )
       #
       # @example Remove container and its volumes
-      #   response = RemoveContainer.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "temp-container",
       #     volumes: true
       #   )
       #
       # @see Docker::Container#delete
-      def self.call(id:, server_context:, force: false, volumes: false)
-        container = Docker::Container.get(id)
+      def execute(id:, force: false, volumes: false)
+        container = ::Docker::Container.get(id)
         container.delete(force: force, v: volumes)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} removed successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        "Container #{id} removed successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error removing container: #{e.message}"
-                                    }])
+        "Error removing container: #{e.message}"
       end
     end
   end

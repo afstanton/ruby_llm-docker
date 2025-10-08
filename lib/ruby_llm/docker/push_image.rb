@@ -76,23 +76,11 @@ module RubyLLM
     class PushImage < RubyLLM::Tool
       description 'Push a Docker image'
 
-      input_schema(
-        properties: {
-          name: {
-            type: 'string',
-            description: 'Image name or ID to push'
-          },
-          tag: {
-            type: 'string',
-            description: 'Tag to push (optional, pushes all tags if not specified)'
-          },
-          repo_tag: {
-            type: 'string',
-            description: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)'
-          }
-        },
-        required: ['name']
-      )
+      param :name, type: :string, description: 'Image name or ID to push'
+      param :tag, type: :string, description: 'Tag to push (optional, pushes all tags if not specified)',
+                  required: false
+      param :repo_tag, type: :string, description: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)',
+                       required: false
 
       # Push a Docker image to a registry.
       #
@@ -117,14 +105,13 @@ module RubyLLM
       #   )
       #
       # @example Push to private registry
-      #   response = PushImage.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     name: "internal-registry.com/team/service",
       #     tag: "latest"
       #   )
       #
       # @see Docker::Image.get
-      def self.call(name:, server_context:, tag: nil, repo_tag: nil)
+      def execute(name:, tag: nil, repo_tag: nil)
         # Construct the full image identifier
         image_identifier = tag ? "#{name}:#{tag}" : name
 
@@ -134,20 +121,14 @@ module RubyLLM
           error_msg = 'Error: Image name must include registry/username ' \
                       "(e.g., 'username/#{name}'). Local images cannot be " \
                       'pushed without a registry prefix.'
-          return RubyLLM::Tool::Response.new([{
-                                               type: 'text',
-                                               text: error_msg
-                                             }])
+          return error_msg
         end
 
         # Verify the image exists
         begin
-          Docker::Image.get(image_identifier)
-        rescue Docker::Error::NotFoundError
-          return RubyLLM::Tool::Response.new([{
-                                               type: 'text',
-                                               text: "Image #{image_identifier} not found"
-                                             }])
+          ::Docker::Image.get(image_identifier)
+        rescue ::Docker::Error::NotFoundError
+          return "Image #{image_identifier} not found"
         end
 
         # Use the Docker CLI to push the image
@@ -156,25 +137,16 @@ module RubyLLM
         _, stderr, status = Open3.capture3('docker', 'push', push_target)
 
         if status.success?
-          RubyLLM::Tool::Response.new([{
-                                        type: 'text',
-                                        text: "Image #{push_target} pushed successfully"
-                                      }])
+          "Image #{push_target} pushed successfully"
         else
           # Extract the error message from stderr
           error_msg = stderr.strip
           error_msg = 'Failed to push image' if error_msg.empty?
 
-          RubyLLM::Tool::Response.new([{
-                                        type: 'text',
-                                        text: "Error pushing image: #{error_msg}"
-                                      }])
+          "Error pushing image: #{error_msg}"
         end
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error pushing image: #{e.message}"
-                                    }])
+        "Error pushing image: #{e.message}"
       end
     end
   end

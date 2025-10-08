@@ -79,19 +79,8 @@ module RubyLLM
     class CreateVolume < RubyLLM::Tool
       description 'Create a Docker volume'
 
-      input_schema(
-        properties: {
-          name: {
-            type: 'string',
-            description: 'Name of the volume'
-          },
-          driver: {
-            type: 'string',
-            description: 'Driver to use (default: local)'
-          }
-        },
-        required: ['name']
-      )
+      param :name, type: :string, description: 'Name of the volume'
+      param :driver, type: :string, description: 'Driver to use (default: local)', required: false
 
       # Create a new Docker volume for persistent data storage.
       #
@@ -115,35 +104,25 @@ module RubyLLM
       #   )
       #
       # @example Create NFS volume
-      #   response = CreateVolume.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     name: "shared-files",
       #     driver: "nfs"
       #   )
       #
       # @see Docker::Volume.create
-      def self.call(name:, server_context:, driver: 'local')
+      def execute(name:, driver: 'local')
         options = {
           'Name' => name,
           'Driver' => driver
         }
 
-        Docker::Volume.create(name, options)
+        ::Docker::Volume.create(name, options)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Volume #{name} created successfully"
-                                    }])
-      rescue Docker::Error::ConflictError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Volume #{name} already exists"
-                                    }])
+        "Volume #{name} created successfully"
+      rescue ::Docker::Error::ConflictError
+        "Volume #{name} already exists"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error creating volume: #{e.message}"
-                                    }])
+        "Error creating volume: #{e.message}"
       end
     end
   end

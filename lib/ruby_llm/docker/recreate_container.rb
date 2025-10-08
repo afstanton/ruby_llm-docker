@@ -73,19 +73,10 @@ module RubyLLM
     class RecreateContainer < RubyLLM::Tool
       description 'Recreate a Docker container (stops, removes, and recreates with same configuration)'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name to recreate'
-          },
-          timeout: {
-            type: 'integer',
-            description: 'Seconds to wait before killing the container when stopping (default: 10)'
-          }
-        },
-        required: ['id']
-      )
+      param :id, type: :string, description: 'Container ID or name to recreate'
+      param :timeout, type: :integer,
+                      description: 'Seconds to wait before killing the container when stopping (default: 10)',
+                      required: false
 
       # Recreate a Docker container with identical configuration.
       #
@@ -110,17 +101,16 @@ module RubyLLM
       #   )
       #
       # @example Recreate database with extended timeout
-      #   response = RecreateContainer.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "postgres-main",
       #     timeout: 60  # Allow time for DB shutdown
       #   )
       #
       # @see Docker::Container.get
       # @see Docker::Container.create
-      def self.call(id:, server_context:, timeout: 10)
+      def execute(id:, timeout: 10)
         # Get the existing container
-        old_container = Docker::Container.get(id)
+        old_container = ::Docker::Container.get(id)
         config = old_container.json
 
         # Extract configuration we need to preserve
@@ -145,25 +135,16 @@ module RubyLLM
         }
         new_config['name'] = name if name
 
-        new_container = Docker::Container.create(new_config)
+        new_container = ::Docker::Container.create(new_config)
 
         # Start if the old one was running
         new_container.start if config['State']['Running']
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} recreated successfully. New ID: #{new_container.id}"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        "Container #{id} recreated successfully. New ID: #{new_container.id}"
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error recreating container: #{e.message}"
-                                    }])
+        "Error recreating container: #{e.message}"
       end
     end
   end

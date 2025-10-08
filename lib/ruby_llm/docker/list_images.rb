@@ -71,11 +71,8 @@ module RubyLLM
       #   # Returns detailed info for all local Docker images
       #
       # @see Docker::Image.all
-      def self.call(*)
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: Docker::Image.all.map(&:info).to_s
-                                    }])
+      def execute
+        ::Docker::Image.all.map(&:info).to_s
       end
     end
   end

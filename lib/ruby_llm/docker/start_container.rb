@@ -52,15 +52,7 @@ module RubyLLM
     class StartContainer < RubyLLM::Tool
       description 'Start a Docker container'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          }
-        },
-        required: ['id']
-      )
+      param :id, desc: 'Container ID or name'
 
       # Start an existing Docker container.
       #
@@ -90,24 +82,15 @@ module RubyLLM
       #   )
       #
       # @see Docker::Container#start
-      def self.call(id:, server_context:)
-        container = Docker::Container.get(id)
+      def execute(id:)
+        container = ::Docker::Container.get(id)
         container.start
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} started successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        "Container #{id} started successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error starting container: #{e.message}"
-                                    }])
+        "Error starting container: #{e.message}"
       end
     end
   end

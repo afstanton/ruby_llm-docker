@@ -70,19 +70,8 @@ module RubyLLM
     class PullImage < RubyLLM::Tool
       description 'Pull a Docker image'
 
-      input_schema(
-        properties: {
-          from_image: {
-            type: 'string',
-            description: 'Image name to pull (e.g., "ubuntu" or "ubuntu:22.04")'
-          },
-          tag: {
-            type: 'string',
-            description: 'Tag to pull (optional, defaults to "latest" if not specified in from_image)'
-          }
-        },
-        required: ['from_image']
-      )
+      param :from_image, desc: 'Image name to pull (e.g., "ubuntu" or "ubuntu:22.04")'
+      param :tag, desc: 'Tag to pull (optional, defaults to "latest" if not specified in from_image)', required: false
 
       # Pull a Docker image from a registry.
       #
@@ -113,7 +102,7 @@ module RubyLLM
       #   )
       #
       # @see Docker::Image.create
-      def self.call(from_image:, server_context:, tag: nil)
+      def execute(from_image:, tag: nil)
         # If tag is provided separately, append it to from_image
         # If from_image already has a tag (contains :), use as-is
         # Otherwise default to :latest
@@ -125,22 +114,13 @@ module RubyLLM
                            "#{from_image}:latest"
                          end
 
-        image = Docker::Image.create('fromImage' => image_with_tag)
+        image = ::Docker::Image.create('fromImage' => image_with_tag)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image #{image_with_tag} pulled successfully. ID: #{image.id}"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image #{image_with_tag} not found"
-                                    }])
+        "Image #{image_with_tag} pulled successfully. ID: #{image.id}"
+      rescue ::Docker::Error::NotFoundError
+        "Image #{image_with_tag} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error pulling image: #{e.message}"
-                                    }])
+        "Error pulling image: #{e.message}"
       end
     end
   end

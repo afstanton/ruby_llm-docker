@@ -66,20 +66,15 @@ module RubyLLM
       # custom networks. The information includes comprehensive metadata for
       # each network.
       #
-      # @param args [Array] variable arguments (unused but accepted for compatibility)
-      #
-      # @return [RubyLLM::Tool::Response] comprehensive network information
+      # @return [String] comprehensive network information
       #
       # @example List all networks
-      #   response = ListNetworks.call
+      #   response = tool.execute
       #   # Returns detailed info for all Docker networks
       #
       # @see Docker::Network.all
-      def self.call(*)
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: Docker::Network.all.map(&:info).to_s
-                                    }])
+      def execute
+        ::Docker::Network.all.map(&:info).to_s
       end
     end
   end

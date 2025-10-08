@@ -60,19 +60,9 @@ module RubyLLM
     class StopContainer < RubyLLM::Tool
       description 'Stop a Docker container'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          },
-          timeout: {
-            type: 'integer',
-            description: 'Seconds to wait before killing the container (default: 10)'
-          }
-        },
-        required: ['id']
-      )
+      param :id, desc: 'Container ID or name'
+      param :timeout, type: :integer, desc: 'Seconds to wait before killing the container (default: 10)',
+                      required: false
 
       # Stop a running Docker container gracefully.
       #
@@ -104,24 +94,15 @@ module RubyLLM
       #   )
       #
       # @see Docker::Container#stop
-      def self.call(id:, server_context:, timeout: 10)
-        container = Docker::Container.get(id)
+      def execute(id:, timeout: 10)
+        container = ::Docker::Container.get(id)
         container.stop('timeout' => timeout)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} stopped successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        "Container #{id} stopped successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error stopping container: #{e.message}"
-                                    }])
+        "Error stopping container: #{e.message}"
       end
     end
   end

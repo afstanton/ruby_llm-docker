@@ -77,15 +77,7 @@ module RubyLLM
     class RemoveNetwork < RubyLLM::Tool
       description 'Remove a Docker network'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Network ID or name'
-          }
-        },
-        required: ['id']
-      )
+      param :id, type: :string, description: 'Network ID or name'
 
       # Remove a Docker network from the system.
       #
@@ -108,30 +100,20 @@ module RubyLLM
       #   )
       #
       # @example Remove by ID
-      #   response = RemoveNetwork.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "1a2b3c4d5e6f"
       #   )
       #
       # @see Docker::Network#delete
-      def self.call(id:, server_context:)
-        network = Docker::Network.get(id)
+      def execute(id:)
+        network = ::Docker::Network.get(id)
         network.delete
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Network #{id} removed successfully"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Network #{id} not found"
-                                    }])
+        "Network #{id} removed successfully"
+      rescue ::Docker::Error::NotFoundError
+        "Network #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error removing network: #{e.message}"
-                                    }])
+        "Error removing network: #{e.message}"
       end
     end
   end

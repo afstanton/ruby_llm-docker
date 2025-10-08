@@ -77,23 +77,10 @@ module RubyLLM
     class CreateNetwork < RubyLLM::Tool
       description 'Create a Docker network'
 
-      input_schema(
-        properties: {
-          name: {
-            type: 'string',
-            description: 'Name of the network'
-          },
-          driver: {
-            type: 'string',
-            description: 'Driver to use (default: bridge)'
-          },
-          check_duplicate: {
-            type: 'boolean',
-            description: 'Check for networks with duplicate names (default: true)'
-          }
-        },
-        required: ['name']
-      )
+      param :name, type: :string, description: 'Name of the network'
+      param :driver, type: :string, description: 'Driver to use (default: bridge)', required: false
+      param :check_duplicate, type: :boolean, description: 'Check for networks with duplicate names (default: true)',
+                              required: false
 
       # Create a new Docker network.
       #
@@ -118,36 +105,26 @@ module RubyLLM
       #   )
       #
       # @example Create host network
-      #   response = CreateNetwork.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     name: "high-performance-net",
       #     driver: "host"
       #   )
       #
       # @see Docker::Network.create
-      def self.call(name:, server_context:, driver: 'bridge', check_duplicate: true)
+      def execute(name:, driver: 'bridge', check_duplicate: true)
         options = {
           'Name' => name,
           'Driver' => driver,
           'CheckDuplicate' => check_duplicate
         }
 
-        network = Docker::Network.create(name, options)
+        network = ::Docker::Network.create(name, options)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Network #{name} created successfully. ID: #{network.id}"
-                                    }])
-      rescue Docker::Error::ConflictError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Network #{name} already exists"
-                                    }])
+        "Network #{name} created successfully. ID: #{network.id}"
+      rescue ::Docker::Error::ConflictError
+        "Network #{name} already exists"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error creating network: #{e.message}"
-                                    }])
+        "Error creating network: #{e.message}"
       end
     end
   end

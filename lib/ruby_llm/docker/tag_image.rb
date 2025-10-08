@@ -83,27 +83,11 @@ module RubyLLM
     class TagImage < RubyLLM::Tool
       description 'Tag a Docker image'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Image ID or current name:tag'
-          },
-          repo: {
-            type: 'string',
-            description: 'Repository name (e.g., "username/imagename" or "registry/username/imagename")'
-          },
-          tag: {
-            type: 'string',
-            description: 'Tag for the image (default: "latest")'
-          },
-          force: {
-            type: 'boolean',
-            description: 'Force tag even if it already exists (default: true)'
-          }
-        },
-        required: %w[id repo]
-      )
+      param :id, type: :string, description: 'Image ID or current name:tag'
+      param :repo, type: :string,
+                   description: 'Repository name (e.g., "username/imagename" or "registry/username/imagename")'
+      param :tag, type: :string, description: 'Tag for the image (default: "latest")', required: false
+      param :force, type: :boolean, description: 'Force tag even if it already exists (default: true)', required: false
 
       # Tag a Docker image with a new repository and tag name.
       #
@@ -131,8 +115,7 @@ module RubyLLM
       #   )
       #
       # @example Tag for registry push
-      #   response = TagImage.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "abc123def456",
       #     repo: "myregistry.com/myuser/myapp",
       #     tag: "production",
@@ -140,25 +123,16 @@ module RubyLLM
       #   )
       #
       # @see Docker::Image#tag
-      def self.call(id:, repo:, server_context:, tag: 'latest', force: true)
-        image = Docker::Image.get(id)
+      def execute(id:, repo:, tag: 'latest', force: true)
+        image = ::Docker::Image.get(id)
 
         image.tag('repo' => repo, 'tag' => tag, 'force' => force)
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image tagged successfully as #{repo}:#{tag}"
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Image #{id} not found"
-                                    }])
+        "Image tagged successfully as #{repo}:#{tag}"
+      rescue ::Docker::Error::NotFoundError
+        "Image #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error tagging image: #{e.message}"
-                                    }])
+        "Error tagging image: #{e.message}"
       end
     end
   end

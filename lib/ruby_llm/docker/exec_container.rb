@@ -62,40 +62,14 @@ module RubyLLM
                   'WARNING: This provides arbitrary command execution within the container. ' \
                   'Ensure proper security measures are in place.'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          },
-          cmd: {
-            type: 'string',
-            description: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
-          },
-          working_dir: {
-            type: 'string',
-            description: 'Working directory for the command (optional)'
-          },
-          user: {
-            type: 'string',
-            description: 'User to run the command as (optional, e.g., "1000" or "username")'
-          },
-          env: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Environment variables as KEY=VALUE (optional)'
-          },
-          stdin: {
-            type: 'string',
-            description: 'Input to send to the command via stdin (optional)'
-          },
-          timeout: {
-            type: 'integer',
-            description: 'Timeout in seconds (optional, default: 60)'
-          }
-        },
-        required: %w[id cmd]
-      )
+      param :id, type: :string, description: 'Container ID or name'
+      param :cmd, type: :string, description: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
+      param :working_dir, type: :string, description: 'Working directory for the command (optional)', required: false
+      param :user, type: :string, description: 'User to run the command as (optional, e.g., "1000" or "username")',
+                   required: false
+      param :env, type: :array, description: 'Environment variables as KEY=VALUE (optional)', required: false
+      param :stdin, type: :string, description: 'Input to send to the command via stdin (optional)', required: false
+      param :timeout, type: :integer, description: 'Timeout in seconds (optional, default: 60)', required: false
 
       # Execute a command inside a running Docker container.
       #
@@ -130,8 +104,7 @@ module RubyLLM
       #   )
       #
       # @example Advanced execution with environment
-      #   response = ExecContainer.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "app-container",
       #     cmd: "bundle exec rails console",
       #     working_dir: "/app",
@@ -141,9 +114,9 @@ module RubyLLM
       #   )
       #
       # @see Docker::Container#exec
-      def self.call(id:, cmd:, server_context:, working_dir: nil, user: nil,
-                    env: nil, stdin: nil, timeout: 60)
-        container = Docker::Container.get(id)
+      def execute(id:, cmd:, working_dir: nil, user: nil,
+                  env: nil, stdin: nil, timeout: 60)
+        container = ::Docker::Container.get(id)
 
         # Parse command string into array
         # Simple shell-like parsing: split on spaces but respect quoted strings
@@ -177,11 +150,8 @@ module RubyLLM
           stdout_data = result[0]
           stderr_data = result[1]
           exit_code = result[2]
-        rescue Docker::Error::TimeoutError
-          return RubyLLM::Tool::Response.new([{
-                                               type: 'text',
-                                               text: "Command execution timed out after #{timeout} seconds"
-                                             }])
+        rescue ::Docker::Error::TimeoutError
+          return "Command execution timed out after #{timeout} seconds"
         end
 
         # Format response
@@ -198,20 +168,11 @@ module RubyLLM
           response_text += "\nSTDERR:\n#{stderr_str}\n" unless stderr_str.strip.empty?
         end
 
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: response_text.strip
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        response_text.strip
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error executing command: #{e.message}"
-                                    }])
+        "Error executing command: #{e.message}"
       end
     end
   end

@@ -70,31 +70,12 @@ module RubyLLM
     class FetchContainerLogs < RubyLLM::Tool
       description 'Fetch Docker container logs'
 
-      input_schema(
-        properties: {
-          id: {
-            type: 'string',
-            description: 'Container ID or name'
-          },
-          stdout: {
-            type: 'boolean',
-            description: 'Include stdout (default: true)'
-          },
-          stderr: {
-            type: 'boolean',
-            description: 'Include stderr (default: true)'
-          },
-          tail: {
-            type: 'integer',
-            description: 'Number of lines to show from the end of logs (default: all)'
-          },
-          timestamps: {
-            type: 'boolean',
-            description: 'Show timestamps (default: false)'
-          }
-        },
-        required: ['id']
-      )
+      param :id, type: :string, description: 'Container ID or name'
+      param :stdout, type: :boolean, description: 'Include stdout (default: true)', required: false
+      param :stderr, type: :boolean, description: 'Include stderr (default: true)', required: false
+      param :tail, type: :integer, description: 'Number of lines to show from the end of logs (default: all)',
+                   required: false
+      param :timestamps, type: :boolean, description: 'Show timestamps (default: false)', required: false
 
       # Retrieve logs from a Docker container.
       #
@@ -121,8 +102,7 @@ module RubyLLM
       #   )
       #
       # @example Get recent error logs with timestamps
-      #   response = FetchContainerLogs.call(
-      #     server_context: context,
+      #   response = tool.execute(
       #     id: "app-container",
       #     stdout: false,
       #     stderr: true,
@@ -131,8 +111,8 @@ module RubyLLM
       #   )
       #
       # @see Docker::Container#logs
-      def self.call(id:, server_context:, stdout: true, stderr: true, tail: nil, timestamps: false)
-        container = Docker::Container.get(id)
+      def execute(id:, stdout: true, stderr: true, tail: nil, timestamps: false)
+        container = ::Docker::Container.get(id)
 
         options = {
           stdout: stdout,
@@ -141,22 +121,11 @@ module RubyLLM
         }
         options[:tail] = tail if tail
 
-        logs = container.logs(options)
-
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: logs
-                                    }])
-      rescue Docker::Error::NotFoundError
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Container #{id} not found"
-                                    }])
+        container.logs(options)
+      rescue ::Docker::Error::NotFoundError
+        "Container #{id} not found"
       rescue StandardError => e
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: "Error fetching logs: #{e.message}"
-                                    }])
+        "Error fetching logs: #{e.message}"
       end
     end
   end
