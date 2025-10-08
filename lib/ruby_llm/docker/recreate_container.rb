@@ -73,9 +73,9 @@ module RubyLLM
     class RecreateContainer < RubyLLM::Tool
       description 'Recreate a Docker container (stops, removes, and recreates with same configuration)'
 
-      param :id, type: :string, description: 'Container ID or name to recreate'
+      param :id, type: :string, desc: 'Container ID or name to recreate'
       param :timeout, type: :integer,
-                      description: 'Seconds to wait before killing the container when stopping (default: 10)',
+                      desc: 'Seconds to wait before killing the container when stopping (default: 10)',
                       required: false
 
       # Recreate a Docker container with identical configuration.

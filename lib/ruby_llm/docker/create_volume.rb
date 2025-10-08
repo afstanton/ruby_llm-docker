@@ -79,8 +79,8 @@ module RubyLLM
     class CreateVolume < RubyLLM::Tool
       description 'Create a Docker volume'
 
-      param :name, type: :string, description: 'Name of the volume'
-      param :driver, type: :string, description: 'Driver to use (default: local)', required: false
+      param :name, type: :string, desc: 'Name of the volume'
+      param :driver, type: :string, desc: 'Driver to use (default: local)', required: false
 
       # Create a new Docker volume for persistent data storage.
       #

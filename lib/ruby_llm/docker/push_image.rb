@@ -76,10 +76,10 @@ module RubyLLM
     class PushImage < RubyLLM::Tool
       description 'Push a Docker image'
 
-      param :name, type: :string, description: 'Image name or ID to push'
-      param :tag, type: :string, description: 'Tag to push (optional, pushes all tags if not specified)',
+      param :name, type: :string, desc: 'Image name or ID to push'
+      param :tag, type: :string, desc: 'Tag to push (optional, pushes all tags if not specified)',
                   required: false
-      param :repo_tag, type: :string, description: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)',
+      param :repo_tag, type: :string, desc: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)',
                        required: false
 
       # Push a Docker image to a registry.

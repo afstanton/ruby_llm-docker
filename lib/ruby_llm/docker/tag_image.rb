@@ -83,11 +83,11 @@ module RubyLLM
     class TagImage < RubyLLM::Tool
       description 'Tag a Docker image'
 
-      param :id, type: :string, description: 'Image ID or current name:tag'
+      param :id, type: :string, desc: 'Image ID or current name:tag'
       param :repo, type: :string,
-                   description: 'Repository name (e.g., "username/imagename" or "registry/username/imagename")'
-      param :tag, type: :string, description: 'Tag for the image (default: "latest")', required: false
-      param :force, type: :boolean, description: 'Force tag even if it already exists (default: true)', required: false
+                   desc: 'Repository name (e.g., "username/imagename" or "registry/username/imagename")'
+      param :tag, type: :string, desc: 'Tag for the image (default: "latest")', required: false
+      param :force, type: :boolean, desc: 'Force tag even if it already exists (default: true)', required: false
 
       # Tag a Docker image with a new repository and tag name.
       #

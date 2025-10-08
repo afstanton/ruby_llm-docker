@@ -87,9 +87,9 @@ module RubyLLM
     class RemoveImage < RubyLLM::Tool
       description 'Remove a Docker image'
 
-      param :id, type: :string, description: 'Image ID, name, or name:tag'
-      param :force, type: :boolean, description: 'Force removal of the image (default: false)', required: false
-      param :noprune, type: :boolean, description: 'Do not delete untagged parents (default: false)', required: false
+      param :id, type: :string, desc: 'Image ID, name, or name:tag'
+      param :force, type: :boolean, desc: 'Force removal of the image (default: false)', required: false
+      param :noprune, type: :boolean, desc: 'Do not delete untagged parents (default: false)', required: false
 
       # Remove a Docker image from the local system.
       #

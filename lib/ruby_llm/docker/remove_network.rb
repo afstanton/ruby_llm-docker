@@ -77,7 +77,7 @@ module RubyLLM
     class RemoveNetwork < RubyLLM::Tool
       description 'Remove a Docker network'
 
-      param :id, type: :string, description: 'Network ID or name'
+      param :id, type: :string, desc: 'Network ID or name'
 
       # Remove a Docker network from the system.
       #

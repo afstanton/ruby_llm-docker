@@ -81,8 +81,8 @@ module RubyLLM
     class RemoveVolume < RubyLLM::Tool
       description 'Remove a Docker volume'
 
-      param :name, type: :string, description: 'Volume name'
-      param :force, type: :boolean, description: 'Force removal of the volume (default: false)', required: false
+      param :name, type: :string, desc: 'Volume name'
+      param :force, type: :boolean, desc: 'Force removal of the volume (default: false)', required: false
 
       # Remove a Docker volume permanently from the system.
       #

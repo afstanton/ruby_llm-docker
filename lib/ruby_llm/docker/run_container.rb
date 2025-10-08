@@ -67,7 +67,7 @@ module RubyLLM
       param :cmd, desc: 'Command to run (optional)', required: false
       param :env, desc: 'Environment variables as KEY=VALUE (optional)', required: false
       param :exposed_ports, desc: 'Exposed ports as JSON object (optional)', required: false
-      param :host_config, desc: 'Host configuration including port bindings, volumes, etc. as JSON object (optional)',
+      param :host_config, desc: 'Host configuration including port bindings, volumes, etc.',
                           required: false
 
       def execute(image:, name: nil, cmd: nil, env: nil, exposed_ports: nil, host_config: nil)

@@ -70,12 +70,12 @@ module RubyLLM
     class FetchContainerLogs < RubyLLM::Tool
       description 'Fetch Docker container logs'
 
-      param :id, type: :string, description: 'Container ID or name'
-      param :stdout, type: :boolean, description: 'Include stdout (default: true)', required: false
-      param :stderr, type: :boolean, description: 'Include stderr (default: true)', required: false
-      param :tail, type: :integer, description: 'Number of lines to show from the end of logs (default: all)',
+      param :id, type: :string, desc: 'Container ID or name'
+      param :stdout, type: :boolean, desc: 'Include stdout (default: true)', required: false
+      param :stderr, type: :boolean, desc: 'Include stderr (default: true)', required: false
+      param :tail, type: :integer, desc: 'Number of lines to show from the end of logs (default: all)',
                    required: false
-      param :timestamps, type: :boolean, description: 'Show timestamps (default: false)', required: false
+      param :timestamps, type: :boolean, desc: 'Show timestamps (default: false)', required: false
 
       # Retrieve logs from a Docker container.
       #

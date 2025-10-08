@@ -58,12 +58,12 @@ module RubyLLM
       description 'Copy a file or directory from the local filesystem into a running Docker container. ' \
                   'The source path is on the local machine, and the destination path is inside the container.'
 
-      param :id, type: :string, description: 'Container ID or name'
-      param :source_path, type: :string, description: 'Path to the file or directory on the local filesystem to copy'
+      param :id, type: :string, desc: 'Container ID or name'
+      param :source_path, type: :string, desc: 'Path to the file or directory on the local filesystem to copy'
       param :destination_path, type: :string,
-                               description: 'Path inside the container where the file/directory should be copied'
+                               desc: 'Path inside the container where the file/directory should be copied'
       param :owner, type: :string,
-                    description: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")',
+                    desc: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")',
                     required: false
 
       # Copy files or directories from host filesystem to a Docker container.

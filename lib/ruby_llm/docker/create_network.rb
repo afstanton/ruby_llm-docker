@@ -77,9 +77,9 @@ module RubyLLM
     class CreateNetwork < RubyLLM::Tool
       description 'Create a Docker network'
 
-      param :name, type: :string, description: 'Name of the network'
-      param :driver, type: :string, description: 'Driver to use (default: bridge)', required: false
-      param :check_duplicate, type: :boolean, description: 'Check for networks with duplicate names (default: true)',
+      param :name, type: :string, desc: 'Name of the network'
+      param :driver, type: :string, desc: 'Driver to use (default: bridge)', required: false
+      param :check_duplicate, type: :boolean, desc: 'Check for networks with duplicate names (default: true)',
                               required: false
 
       # Create a new Docker network.

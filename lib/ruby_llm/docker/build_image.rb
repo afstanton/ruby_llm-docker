@@ -54,8 +54,8 @@ module RubyLLM
     class BuildImage < RubyLLM::Tool
       description 'Build a Docker image'
 
-      param :dockerfile, type: :string, description: 'Dockerfile content as a string'
-      param :tag, type: :string, description: 'Tag for the built image (e.g., "myimage:latest")', required: false
+      param :dockerfile, type: :string, desc: 'Dockerfile content as a string'
+      param :tag, type: :string, desc: 'Tag for the built image (e.g., "myimage:latest")', required: false
 
       # Build a Docker image from Dockerfile content.
       #

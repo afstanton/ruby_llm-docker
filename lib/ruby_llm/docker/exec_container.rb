@@ -62,14 +62,14 @@ module RubyLLM
                   'WARNING: This provides arbitrary command execution within the container. ' \
                   'Ensure proper security measures are in place.'
 
-      param :id, type: :string, description: 'Container ID or name'
-      param :cmd, type: :string, description: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
-      param :working_dir, type: :string, description: 'Working directory for the command (optional)', required: false
-      param :user, type: :string, description: 'User to run the command as (optional, e.g., "1000" or "username")',
+      param :id, type: :string, desc: 'Container ID or name'
+      param :cmd, type: :string, desc: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
+      param :working_dir, type: :string, desc: 'Working directory for the command (optional)', required: false
+      param :user, type: :string, desc: 'User to run the command as (optional, e.g., "1000" or "username")',
                    required: false
-      param :env, type: :array, description: 'Environment variables as KEY=VALUE (optional)', required: false
-      param :stdin, type: :string, description: 'Input to send to the command via stdin (optional)', required: false
-      param :timeout, type: :integer, description: 'Timeout in seconds (optional, default: 60)', required: false
+      param :env, type: :array, desc: 'Environment variables as KEY=VALUE (optional)', required: false
+      param :stdin, type: :string, desc: 'Input to send to the command via stdin (optional)', required: false
+      param :timeout, type: :integer, desc: 'Timeout in seconds (optional, default: 60)', required: false
 
       # Execute a command inside a running Docker container.
       #
