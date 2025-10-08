@@ -64,7 +64,7 @@ module RubyLLM
     #
     # @see Docker::Volume#remove
     # @since 0.1.0
-    REMOVE_VOLUME_DEFINITION = ::ToolForge.define(:remove_volume) do
+    REMOVE_VOLUME_DEFINITION = ToolForge.define(:remove_volume) do
       description 'Remove a Docker volume'
 
       param :name,

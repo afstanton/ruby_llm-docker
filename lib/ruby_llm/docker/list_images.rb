@@ -45,7 +45,7 @@ module RubyLLM
     #
     # @see Docker::Image.all
     # @since 0.1.0
-    LIST_IMAGES_DEFINITION = ::ToolForge.define(:list_images) do
+    LIST_IMAGES_DEFINITION = ToolForge.define(:list_images) do
       description 'List Docker images'
 
       execute do

@@ -70,7 +70,7 @@ module RubyLLM
     #
     # @see Docker::Image#tag
     # @since 0.1.0
-    TAG_IMAGE_DEFINITION = ::ToolForge.define(:tag_image) do
+    TAG_IMAGE_DEFINITION = ToolForge.define(:tag_image) do
       description 'Tag a Docker image'
 
       param :id,

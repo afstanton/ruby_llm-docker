@@ -46,7 +46,7 @@ module RubyLLM
     #
     # @see Docker::Volume.all
     # @since 0.1.0
-    LIST_VOLUMES_DEFINITION = ::ToolForge.define(:list_volumes) do
+    LIST_VOLUMES_DEFINITION = ToolForge.define(:list_volumes) do
       description 'List Docker volumes'
 
       execute do

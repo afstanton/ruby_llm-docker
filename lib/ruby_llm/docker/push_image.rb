@@ -68,7 +68,7 @@ module RubyLLM
     #
     # @see Docker CLI push command
     # @since 0.1.0
-    PUSH_IMAGE_DEFINITION = ::ToolForge.define(:push_image) do
+    PUSH_IMAGE_DEFINITION = ToolForge.define(:push_image) do
       description 'Push a Docker image'
 
       param :name,

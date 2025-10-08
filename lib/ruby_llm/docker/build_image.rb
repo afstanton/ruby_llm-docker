@@ -73,7 +73,7 @@ module RubyLLM
     #
     # @see Docker::Image.build_from_dir
     # @since 0.1.0
-    BUILD_IMAGE_DEFINITION = ::ToolForge.define(:build_image) do
+    BUILD_IMAGE_DEFINITION = ToolForge.define(:build_image) do
       description 'Build a Docker image'
 
       param :dockerfile,

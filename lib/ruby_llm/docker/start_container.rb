@@ -50,7 +50,7 @@ module RubyLLM
     #
     # @see Docker::Container#start
     # @since 0.1.0
-    START_CONTAINER_DEFINITION = ::ToolForge.define(:start_container) do
+    START_CONTAINER_DEFINITION = ToolForge.define(:start_container) do
       description 'Start a Docker container'
 
       param :id,

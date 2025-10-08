@@ -24,6 +24,9 @@ require_relative '../lib/ruby_llm/docker'
 require 'io/console'
 
 # rubocop:disable Metrics/ClassLength
+
+# Interactive Docker chat interface using RubyLLM and OpenAI.
+# Provides natural language interaction with Docker containers, images, networks, and volumes.
 class DockerChat
   def initialize
     check_environment

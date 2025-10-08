@@ -61,7 +61,7 @@ module RubyLLM
     #
     # @see Docker::Container.create
     # @since 0.1.0
-    CREATE_CONTAINER_DEFINITION = ::ToolForge.define(:create_container) do
+    CREATE_CONTAINER_DEFINITION = ToolForge.define(:create_container) do
       description 'Create a Docker container'
 
       param :image,

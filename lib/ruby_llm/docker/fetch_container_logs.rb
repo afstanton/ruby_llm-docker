@@ -57,7 +57,7 @@ module RubyLLM
     #
     # @see Docker::Container#logs
     # @since 0.1.0
-    FETCH_CONTAINER_LOGS_DEFINITION = ::ToolForge.define(:fetch_container_logs) do
+    FETCH_CONTAINER_LOGS_DEFINITION = ToolForge.define(:fetch_container_logs) do
       description 'Fetch Docker container logs'
 
       param :id,

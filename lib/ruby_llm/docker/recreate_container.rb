@@ -61,7 +61,7 @@ module RubyLLM
     # @see Docker::Container#remove
     # @see Docker::Container.create
     # @since 0.1.0
-    RECREATE_CONTAINER_DEFINITION = ::ToolForge.define(:recreate_container) do
+    RECREATE_CONTAINER_DEFINITION = ToolForge.define(:recreate_container) do
       description 'Recreate a Docker container (stops, removes, and recreates with same configuration)'
 
       param :id,

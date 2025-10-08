@@ -74,7 +74,7 @@ module RubyLLM
     #
     # @see Docker::Network.create
     # @since 0.1.0
-    CREATE_NETWORK_DEFINITION = ::ToolForge.define(:create_network) do
+    CREATE_NETWORK_DEFINITION = ToolForge.define(:create_network) do
       description 'Create a Docker network'
 
       param :name,

@@ -46,7 +46,7 @@ module RubyLLM
     #
     # @see Docker::Container.all
     # @since 0.1.0
-    LIST_CONTAINERS_DEFINITION = ::ToolForge.define(:list_containers) do
+    LIST_CONTAINERS_DEFINITION = ToolForge.define(:list_containers) do
       description 'List Docker containers'
 
       param :all,

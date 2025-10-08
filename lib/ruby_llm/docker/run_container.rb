@@ -60,7 +60,7 @@ module RubyLLM
     #
     # @see Docker::Container.create
     # @since 0.1.0
-    RUN_CONTAINER_DEFINITION = ::ToolForge.define(:run_container) do
+    RUN_CONTAINER_DEFINITION = ToolForge.define(:run_container) do
       description 'Run a Docker container (create and start)'
 
       param :image,
