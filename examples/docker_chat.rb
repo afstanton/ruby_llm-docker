@@ -13,11 +13,16 @@
 #   export OPENAI_API_KEY='your-key-here'
 #   ruby examples/docker_chat.rb
 #
+# Debug mode:
+#   ruby examples/docker_chat.rb --debug        # Enable debug output
+#   DOCKER_CHAT_DEBUG=true ruby examples/docker_chat.rb   # Via environment variable
+#
 # Commands:
 #   /exit      - Exit the chat
 #   /help      - Show available Docker tools
 #   /tools     - List all loaded tools
 #   /clear     - Clear the screen
+#   /debug     - Toggle debug mode on/off
 #   anything else - Send to OpenAI with Docker tools available
 
 require_relative '../lib/ruby_llm/docker'
@@ -31,6 +36,7 @@ class DockerChat
   def initialize
     check_environment
     configure_ruby_llm
+    setup_debug_mode
     setup_chat
     @running = true
   end
@@ -57,8 +63,29 @@ class DockerChat
     end
   end
 
+  def setup_debug_mode
+    # Check for debug mode via environment variable or command line argument
+    @debug_mode = ENV['DOCKER_CHAT_DEBUG'] == 'true' || ARGV.include?('--debug') || ARGV.include?('-d')
+    debug_puts '🐛 Debug mode enabled' if @debug_mode
+  end
+
+  def debug_puts(message)
+    puts message if @debug_mode
+  end
+
   def setup_chat
+    # rubocop:disable Layout/BlockAlignment
+    # rubocop:disable Style/MultilineBlockChain
     @chat = RubyLLM.chat(model: 'gpt-4')
+                   .on_tool_call do |tool_call|
+                      debug_puts "🔧 Calling tool: #{tool_call.name}"
+                      debug_puts "📝 Arguments: #{tool_call.arguments}"
+                    end
+                    .on_tool_result do |result|
+                      debug_puts "✅ Tool returned: #{result}"
+                    end
+    # rubocop:enable Layout/BlockAlignment
+    # rubocop:enable Style/MultilineBlockChain
 
     # Add all Docker tools to the chat
     RubyLLM::Docker.add_all_tools_to_chat(@chat)
@@ -81,9 +108,11 @@ class DockerChat
     puts '  /help  - Show available Docker tools'
     puts '  /tools - List all loaded tools'
     puts '  /clear - Clear the screen'
+    puts '  /debug - Toggle debug mode on/off'
     puts
     puts '🚀 Ready! Type your questions or commands...'
     puts
+    debug_puts '🐛 Debug mode is currently enabled. Use /debug to toggle.'
   end
 
   def main_loop
@@ -121,6 +150,8 @@ class DockerChat
       show_tools
     when '/clear', '/c'
       clear_screen
+    when '/debug', '/d'
+      toggle_debug_mode
     when input.start_with?('/')
       puts "❓ Unknown command: #{input}"
       puts '   Type /help for available commands'
@@ -209,6 +240,13 @@ class DockerChat
   def clear_screen
     system('clear') || system('cls')
     puts '🐳 Docker Chat - Screen cleared'
+  end
+
+  def toggle_debug_mode
+    @debug_mode = !@debug_mode
+    status = @debug_mode ? 'enabled' : 'disabled'
+    puts "🐛 Debug mode #{status}"
+    debug_puts 'Debug output will now be shown for tool calls and results' if @debug_mode
   end
 
   def show_goodbye
