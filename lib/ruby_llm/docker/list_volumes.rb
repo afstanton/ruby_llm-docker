@@ -44,13 +44,13 @@ module RubyLLM
     #     puts "#{volume['Name']}: #{volume['Mountpoint']}"
     #   end
     #
-    # @see Docker::Volume.all
+    # @see ::Docker::Volume.all
     # @since 0.1.0
     LIST_VOLUMES_DEFINITION = ToolForge.define(:list_volumes) do
       description 'List Docker volumes'
 
       execute do
-        Docker::Volume.all.map(&:info)
+        ::Docker::Volume.all.map(&:info)
       end
     end
 

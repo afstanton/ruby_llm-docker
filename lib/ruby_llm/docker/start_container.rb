@@ -48,7 +48,7 @@ module RubyLLM
     #     id: "a1b2c3d4e5f6"
     #   )
     #
-    # @see Docker::Container#start
+    # @see ::Docker::Container#start
     # @since 0.1.0
     START_CONTAINER_DEFINITION = ToolForge.define(:start_container) do
       description 'Start a Docker container'
@@ -58,11 +58,11 @@ module RubyLLM
             description: 'Container ID or name'
 
       execute do |id:|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
         container.start
 
         "Container #{id} started successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error starting container: #{e.message}"

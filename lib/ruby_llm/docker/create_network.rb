@@ -72,7 +72,7 @@ module RubyLLM
     #     check_duplicate: false
     #   )
     #
-    # @see Docker::Network.create
+    # @see ::Docker::Network.create
     # @since 0.1.0
     CREATE_NETWORK_DEFINITION = ToolForge.define(:create_network) do
       description 'Create a Docker network'
@@ -100,10 +100,10 @@ module RubyLLM
           'CheckDuplicate' => check_duplicate
         }
 
-        network = Docker::Network.create(name, options)
+        network = ::Docker::Network.create(name, options)
 
         "Network #{name} created successfully. ID: #{network.id}"
-      rescue Docker::Error::ConflictError
+      rescue ::Docker::Error::ConflictError
         "Network #{name} already exists"
       rescue StandardError => e
         "Error creating network: #{e.message}"

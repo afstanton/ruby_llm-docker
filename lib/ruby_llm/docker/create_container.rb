@@ -59,7 +59,7 @@ module RubyLLM
     #     }
     #   )
     #
-    # @see Docker::Container.create
+    # @see ::Docker::Container.create
     # @since 0.1.0
     CREATE_CONTAINER_DEFINITION = ToolForge.define(:create_container) do
       description 'Create a Docker container'
@@ -106,13 +106,13 @@ module RubyLLM
         config['ExposedPorts'] = exposed_ports if exposed_ports
         config['HostConfig'] = host_config if host_config
 
-        container = Docker::Container.create(config)
+        container = ::Docker::Container.create(config)
         container_name = container.info['Names']&.first&.delete_prefix('/')
 
         "Container created successfully. ID: #{container.id}, Name: #{container_name}"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Image #{image} not found"
-      rescue Docker::Error::ConflictError
+      rescue ::Docker::Error::ConflictError
         "Container with name #{name} already exists"
       rescue StandardError => e
         "Error creating container: #{e.message}"

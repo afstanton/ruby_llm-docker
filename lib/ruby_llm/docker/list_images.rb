@@ -43,13 +43,13 @@ module RubyLLM
     #     puts "#{image['RepoTags']}: #{image['Size']} bytes"
     #   end
     #
-    # @see Docker::Image.all
+    # @see ::Docker::Image.all
     # @since 0.1.0
     LIST_IMAGES_DEFINITION = ToolForge.define(:list_images) do
       description 'List Docker images'
 
       execute do
-        Docker::Image.all.map(&:info)
+        ::Docker::Image.all.map(&:info)
       end
     end
 

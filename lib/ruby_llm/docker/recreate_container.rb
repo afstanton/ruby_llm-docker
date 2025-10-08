@@ -57,9 +57,9 @@ module RubyLLM
     #     timeout: 30
     #   )
     #
-    # @see Docker::Container#stop
-    # @see Docker::Container#remove
-    # @see Docker::Container.create
+    # @see ::Docker::Container#stop
+    # @see ::Docker::Container#remove
+    # @see ::Docker::Container.create
     # @since 0.1.0
     RECREATE_CONTAINER_DEFINITION = ToolForge.define(:recreate_container) do
       description 'Recreate a Docker container (stops, removes, and recreates with same configuration)'
@@ -76,7 +76,7 @@ module RubyLLM
 
       execute do |id:, timeout: 10|
         # Get the existing container
-        old_container = Docker::Container.get(id)
+        old_container = ::Docker::Container.get(id)
         config = old_container.json
 
         # Extract configuration we need to preserve
@@ -101,13 +101,13 @@ module RubyLLM
         }
         new_config['name'] = name if name
 
-        new_container = Docker::Container.create(new_config)
+        new_container = ::Docker::Container.create(new_config)
 
         # Start if the old one was running
         new_container.start if config['State']['Running']
 
         "Container #{id} recreated successfully. New ID: #{new_container.id}"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error recreating container: #{e.message}"

@@ -62,7 +62,7 @@ module RubyLLM
     #     tag: "13.8"
     #   )
     #
-    # @see Docker::Image.create
+    # @see ::Docker::Image.create
     # @since 0.1.0
     PULL_IMAGE_DEFINITION = ToolForge.define(:pull_image) do
       description 'Pull a Docker image'
@@ -88,10 +88,10 @@ module RubyLLM
                            "#{from_image}:latest"
                          end
 
-        image = Docker::Image.create('fromImage' => image_with_tag)
+        image = ::Docker::Image.create('fromImage' => image_with_tag)
 
         "Image #{image_with_tag} pulled successfully. ID: #{image.id}"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Image #{image_with_tag} not found"
       rescue StandardError => e
         "Error pulling image: #{e.message}"

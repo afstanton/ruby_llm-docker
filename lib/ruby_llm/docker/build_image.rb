@@ -71,7 +71,7 @@ module RubyLLM
     #     tag: "custom-nginx:v1.0"
     #   )
     #
-    # @see Docker::Image.build_from_dir
+    # @see ::Docker::Image.build_from_dir
     # @since 0.1.0
     BUILD_IMAGE_DEFINITION = ToolForge.define(:build_image) do
       description 'Build a Docker image'
@@ -87,7 +87,7 @@ module RubyLLM
 
       execute do |dockerfile:, tag: nil|
         # Build the image
-        image = Docker::Image.build(dockerfile)
+        image = ::Docker::Image.build(dockerfile)
 
         # If a tag was specified, tag the image
         if tag

@@ -62,7 +62,7 @@ module RubyLLM
     #     name: "test-data-volume"
     #   )
     #
-    # @see Docker::Volume#remove
+    # @see ::Docker::Volume#remove
     # @since 0.1.0
     REMOVE_VOLUME_DEFINITION = ToolForge.define(:remove_volume) do
       description 'Remove a Docker volume'
@@ -78,11 +78,11 @@ module RubyLLM
             default: false
 
       execute do |name:, force: false|
-        volume = Docker::Volume.get(name)
+        volume = ::Docker::Volume.get(name)
         volume.remove(force: force)
 
         "Volume #{name} removed successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Volume #{name} not found"
       rescue StandardError => e
         "Error removing volume: #{e.message}"

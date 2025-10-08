@@ -44,7 +44,7 @@ module RubyLLM
     #     puts "#{container['Names'].first}: #{container['State']}"
     #   end
     #
-    # @see Docker::Container.all
+    # @see ::Docker::Container.all
     # @since 0.1.0
     LIST_CONTAINERS_DEFINITION = ToolForge.define(:list_containers) do
       description 'List Docker containers'
@@ -56,7 +56,7 @@ module RubyLLM
             default: true
 
       execute do |all: true|
-        Docker::Container.all(all: all).map(&:info)
+        ::Docker::Container.all(all: all).map(&:info)
       end
     end
 

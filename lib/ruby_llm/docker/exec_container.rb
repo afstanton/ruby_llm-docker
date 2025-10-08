@@ -71,7 +71,7 @@ module RubyLLM
     #     timeout: 300
     #   )
     #
-    # @see Docker::Container#exec
+    # @see ::Docker::Container#exec
     # @since 0.1.0
     EXEC_CONTAINER_DEFINITION = ToolForge.define(:exec_container) do
       description 'Execute a command inside a running Docker container. ' \
@@ -113,7 +113,7 @@ module RubyLLM
             default: 60
 
       execute do |id:, cmd:, working_dir: nil, user: nil, env: nil, stdin: nil, timeout: 60|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
 
         # Parse command string into array
         cmd_array = Shellwords.split(cmd)
@@ -137,7 +137,7 @@ module RubyLLM
           stdout_data = result[0]
           stderr_data = result[1]
           exit_code = result[2]
-        rescue Docker::Error::TimeoutError
+        rescue ::Docker::Error::TimeoutError
           return "Command execution timed out after #{timeout} seconds"
         end
 
@@ -156,7 +156,7 @@ module RubyLLM
         end
 
         response_text.strip
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error executing command: #{e.message}"

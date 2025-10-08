@@ -61,7 +61,7 @@ module RubyLLM
     #     owner: "app:app"
     #   )
     #
-    # @see Docker::Container#archive_in_stream
+    # @see ::Docker::Container#archive_in_stream
     # @since 0.1.0
     COPY_TO_CONTAINER_DEFINITION = ToolForge.define(:copy_to_container) do
       description 'Copy a file or directory from the local filesystem into a running Docker container. ' \
@@ -109,7 +109,7 @@ module RubyLLM
       end
 
       execute do |id:, source_path:, destination_path:, owner: nil|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
 
         # Verify source path exists
         next "Source path not found: #{source_path}" unless File.exist?(source_path)
@@ -139,7 +139,7 @@ module RubyLLM
         response_text = "Successfully copied #{file_type} from #{source_path} to #{id}:#{destination_path}"
         response_text += "\nOwnership changed to #{owner}" if owner
         response_text
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error copying to container: #{e.message}"

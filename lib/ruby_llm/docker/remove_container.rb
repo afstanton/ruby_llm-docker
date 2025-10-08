@@ -54,7 +54,7 @@ module RubyLLM
     #     volumes: true
     #   )
     #
-    # @see Docker::Container#remove
+    # @see ::Docker::Container#remove
     # @since 0.1.0
     REMOVE_CONTAINER_DEFINITION = ToolForge.define(:remove_container) do
       description 'Remove a Docker container'
@@ -76,11 +76,11 @@ module RubyLLM
             default: false
 
       execute do |id:, force: false, volumes: false|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
         container.delete(force: force, v: volumes)
 
         "Container #{id} removed successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error removing container: #{e.message}"

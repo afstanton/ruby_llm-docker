@@ -62,7 +62,7 @@ module RubyLLM
     #     noprune: true
     #   )
     #
-    # @see Docker::Image#remove
+    # @see ::Docker::Image#remove
     # @since 0.1.0
     REMOVE_IMAGE_DEFINITION = ToolForge.define(:remove_image) do
       description 'Remove a Docker image'
@@ -84,11 +84,11 @@ module RubyLLM
             default: false
 
       execute do |id:, force: false, noprune: false|
-        image = Docker::Image.get(id)
+        image = ::Docker::Image.get(id)
         image.remove(force: force, noprune: noprune)
 
         "Image #{id} removed successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Image #{id} not found"
       rescue StandardError => e
         "Error removing image: #{e.message}"

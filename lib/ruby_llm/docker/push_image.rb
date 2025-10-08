@@ -98,8 +98,8 @@ module RubyLLM
 
         # Verify the image exists
         begin
-          Docker::Image.get(image_identifier)
-        rescue Docker::Error::NotFoundError
+          ::Docker::Image.get(image_identifier)
+        rescue ::Docker::Error::NotFoundError
           next "Image #{image_identifier} not found"
         end
 

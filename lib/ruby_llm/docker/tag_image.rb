@@ -68,7 +68,7 @@ module RubyLLM
     #     tag: "release-candidate"
     #   )
     #
-    # @see Docker::Image#tag
+    # @see ::Docker::Image#tag
     # @since 0.1.0
     TAG_IMAGE_DEFINITION = ToolForge.define(:tag_image) do
       description 'Tag a Docker image'
@@ -94,12 +94,12 @@ module RubyLLM
             default: true
 
       execute do |id:, repo:, tag: 'latest', force: true|
-        image = Docker::Image.get(id)
+        image = ::Docker::Image.get(id)
 
         image.tag('repo' => repo, 'tag' => tag, 'force' => force)
 
         "Image tagged successfully as #{repo}:#{tag}"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Image #{id} not found"
       rescue StandardError => e
         "Error tagging image: #{e.message}"

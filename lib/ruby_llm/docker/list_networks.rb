@@ -44,13 +44,13 @@ module RubyLLM
     #     puts "#{network['Name']}: #{network['Driver']}"
     #   end
     #
-    # @see Docker::Network.all
+    # @see ::Docker::Network.all
     # @since 0.1.0
     LIST_NETWORKS_DEFINITION = ToolForge.define(:list_networks) do
       description 'List Docker networks'
 
       execute do
-        Docker::Network.all.map(&:info)
+        ::Docker::Network.all.map(&:info)
       end
     end
 

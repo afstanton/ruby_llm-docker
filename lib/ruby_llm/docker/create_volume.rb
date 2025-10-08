@@ -71,7 +71,7 @@ module RubyLLM
     #     driver: "local"
     #   )
     #
-    # @see Docker::Volume.create
+    # @see ::Docker::Volume.create
     # @since 0.1.0
     CREATE_VOLUME_DEFINITION = ToolForge.define(:create_volume) do
       description 'Create a Docker volume'
@@ -92,10 +92,10 @@ module RubyLLM
           'Driver' => driver
         }
 
-        Docker::Volume.create(name, options)
+        ::Docker::Volume.create(name, options)
 
         "Volume #{name} created successfully"
-      rescue Docker::Error::ConflictError
+      rescue ::Docker::Error::ConflictError
         "Volume #{name} already exists"
       rescue StandardError => e
         "Error creating volume: #{e.message}"

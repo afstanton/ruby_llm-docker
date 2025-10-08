@@ -58,7 +58,7 @@ module RubyLLM
     #     id: "test-isolated-network"
     #   )
     #
-    # @see Docker::Network#delete
+    # @see ::Docker::Network#delete
     # @since 0.1.0
     REMOVE_NETWORK_DEFINITION = ToolForge.define(:remove_network) do
       description 'Remove a Docker network'
@@ -68,11 +68,11 @@ module RubyLLM
             description: 'Network ID or name'
 
       execute do |id:|
-        network = Docker::Network.get(id)
+        network = ::Docker::Network.get(id)
         network.delete
 
         "Network #{id} removed successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Network #{id} not found"
       rescue StandardError => e
         "Error removing network: #{e.message}"

@@ -51,7 +51,7 @@ module RubyLLM
     #     timeout: 30
     #   )
     #
-    # @see Docker::Container#stop
+    # @see ::Docker::Container#stop
     # @since 0.1.0
     STOP_CONTAINER_DEFINITION = ToolForge.define(:stop_container) do
       description 'Stop a Docker container'
@@ -67,11 +67,11 @@ module RubyLLM
             default: 10
 
       execute do |id:, timeout: 10|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
         container.stop('timeout' => timeout)
 
         "Container #{id} stopped successfully"
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error stopping container: #{e.message}"

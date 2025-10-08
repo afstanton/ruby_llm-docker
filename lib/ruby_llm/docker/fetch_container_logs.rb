@@ -55,7 +55,7 @@ module RubyLLM
     #     tail: 100
     #   )
     #
-    # @see Docker::Container#logs
+    # @see ::Docker::Container#logs
     # @since 0.1.0
     FETCH_CONTAINER_LOGS_DEFINITION = ToolForge.define(:fetch_container_logs) do
       description 'Fetch Docker container logs'
@@ -88,7 +88,7 @@ module RubyLLM
             default: false
 
       execute do |id:, stdout: true, stderr: true, tail: nil, timestamps: false|
-        container = Docker::Container.get(id)
+        container = ::Docker::Container.get(id)
 
         options = {
           stdout: stdout,
@@ -98,7 +98,7 @@ module RubyLLM
         options[:tail] = tail if tail
 
         container.logs(options)
-      rescue Docker::Error::NotFoundError
+      rescue ::Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error fetching logs: #{e.message}"
