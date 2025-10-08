@@ -2,6 +2,7 @@
 
 require 'ruby_llm'
 require 'docker'
+require 'shellwords'
 require 'zeitwerk'
 
 loader = Zeitwerk::Loader.for_gem_extension(RubyLLM)
