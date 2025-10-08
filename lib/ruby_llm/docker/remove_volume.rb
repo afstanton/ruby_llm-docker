@@ -2,126 +2,93 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for removing Docker volumes.
+    # MCP tool for removing Docker volumes.
     #
-    # This tool provides the ability to permanently delete Docker volumes from
-    # the system. This is a destructive operation that will permanently delete
-    # all data stored in the volume.
+    # This tool provides the ability to delete Docker volumes when they
+    # are no longer needed. Volume removal is critical for preventing
+    # storage leaks and maintaining clean Docker environments.
     #
     # == Features
     #
-    # - Remove Docker volumes by name
-    # - Force removal option for volumes in use
+    # - Remove volumes by name
+    # - Force removal of volumes in use
+    # - Validation of volume existence
     # - Comprehensive error handling
-    # - Dependency checking (prevents removal if containers are using the volume)
-    # - Safe cleanup of storage resources
-    #
-    # == ⚠️ CRITICAL DATA LOSS WARNING ⚠️
-    #
-    # **DESTRUCTIVE OPERATION - PERMANENT DATA LOSS**
-    #
-    # This operation permanently and irreversibly deletes data:
-    # - **ALL DATA** in the volume is deleted forever
-    # - No recovery possible after deletion
-    # - Applications may lose critical data
-    # - Databases and persistent state are destroyed
-    # - Configuration files and user data are lost
-    # - Operation cannot be undone
-    #
-    # == Volume Dependencies
-    #
-    # Volumes may have active dependencies:
-    # - **Running Containers**: Containers currently using the volume
-    # - **Stopped Containers**: Containers that could be restarted
-    # - **Application Data**: Critical application state and databases
-    # - **User Data**: User-generated content and files
+    # - Safe volume cleanup procedures
+    # - Prevention of accidental data loss
     #
     # == Security Considerations
     #
-    # Volume removal has security implications:
-    # - Sensitive data is not securely wiped
-    # - Data may be recoverable from disk sectors
-    # - Shared volumes may affect multiple applications
-    # - Removal logs may reveal data existence
+    # Volume removal involves critical data considerations:
+    # - **Data Loss**: Removed volumes and their data are permanently deleted
+    # - **Service Disruption**: Removing volumes can break running containers
+    # - **Data Recovery**: Volume data cannot be recovered after removal
+    # - **Container Dependencies**: Applications may fail without expected volumes
+    # - **Storage Cleanup**: Improper removal can leave orphaned data
+    # - **Backup Requirements**: Critical data should be backed up before removal
     #
-    # Critical security measures:
-    # - **Backup critical data** before removal
-    # - Verify no containers depend on the volume
-    # - Consider secure data wiping for sensitive volumes
-    # - Audit volume removal operations
-    # - Monitor for unauthorized volume deletions
+    # **Security Recommendations**:
+    # - Always backup critical data before volume removal
+    # - Verify no containers are using the volume
+    # - Use force option only when absolutely necessary
+    # - Document volume removal in change management
+    # - Implement volume lifecycle and retention policies
+    # - Monitor storage usage after volume removal
+    # - Consider data migration instead of removal
     #
-    # == Force Removal Risks
+    # == Parameters
     #
-    # Force removal bypasses safety checks:
-    # - Removes volumes even if containers are using them
-    # - Can cause immediate application failures
-    # - May corrupt running applications
-    # - Data loss occurs immediately
+    # - **name**: Volume name (required)
+    # - **force**: Force removal of the volume (optional, default: false)
     #
     # == Example Usage
     #
-    #   # Safe removal of unused volume
-    #   RemoveVolume.call(
+    #   # Remove unused volume
+    #   response = RemoveVolume.call(
     #     server_context: context,
-    #     name: "temp-data"
+    #     name: "old-app-data"
     #   )
     #
-    #   # Force removal of volume in use (DANGEROUS)
-    #   RemoveVolume.call(
+    #   # Force remove volume in use
+    #   response = RemoveVolume.call(
     #     server_context: context,
     #     name: "stuck-volume",
     #     force: true
     #   )
     #
-    # @see CreateVolume
-    # @see ListVolumes
+    #   # Clean up test volumes
+    #   response = RemoveVolume.call(
+    #     server_context: context,
+    #     name: "test-data-volume"
+    #   )
+    #
     # @see Docker::Volume#remove
     # @since 0.1.0
-    class RemoveVolume < RubyLLM::Tool
+    REMOVE_VOLUME_DEFINITION = ToolForge.define(:remove_volume) do
       description 'Remove a Docker volume'
 
-      param :name, type: :string, desc: 'Volume name'
-      param :force, type: :boolean, desc: 'Force removal of the volume (default: false)', required: false
+      param :name,
+            type: :string,
+            description: 'Volume name'
 
-      # Remove a Docker volume permanently from the system.
-      #
-      # This method permanently deletes the specified volume and all data
-      # contained within it. By default, it performs safety checks to prevent
-      # removal of volumes with active container dependencies.
-      #
-      # @param name [String] name of the volume to remove
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param force [Boolean] whether to force removal despite dependencies (default: false)
-      #
-      # @return [RubyLLM::Tool::Response] removal operation results
-      #
-      # @raise [Docker::Error::NotFoundError] if volume doesn't exist
-      # @raise [StandardError] for removal failures or dependency conflicts
-      #
-      # @example Remove unused volume
-      #   response = RemoveVolume.call(
-      #     server_context: context,
-      #     name: "old-cache-data"
-      #   )
-      #
-      # @example Force remove problematic volume
-      #   response = tool.execute(
-      #     name: "corrupted-volume",
-      #     force: true
-      #   )
-      #
-      # @see Docker::Volume#remove
-      def execute(name:, force: false)
-        volume = ::Docker::Volume.get(name)
+      param :force,
+            type: :boolean,
+            description: 'Force removal of the volume (default: false)',
+            required: false,
+            default: false
+
+      execute do |name:, force: false|
+        volume = Docker::Volume.get(name)
         volume.remove(force: force)
 
         "Volume #{name} removed successfully"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Volume #{name} not found"
       rescue StandardError => e
         "Error removing volume: #{e.message}"
       end
     end
+
+    RemoveVolume = REMOVE_VOLUME_DEFINITION.to_ruby_llm_tool
   end
 end

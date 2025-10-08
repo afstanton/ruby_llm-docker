@@ -1,153 +1,124 @@
 # frozen_string_literal: true
 
-require 'json'
-require 'open3'
-
 module RubyLLM
   module Docker
-    # RubyLLM tool for pushing Docker images to registries.
+    # MCP tool for pushing Docker images to registries.
     #
-    # This tool provides the ability to upload Docker images to Docker registries
-    # such as Docker Hub, private registries, or cloud-based container registries.
-    # It uses the Docker CLI to leverage native credential handling and push
-    # capabilities.
+    # This tool provides the ability to upload Docker images to Docker
+    # registries such as Docker Hub, private registries, or cloud-based
+    # container registries. It supports various push configurations and
+    # authentication scenarios.
     #
     # == Features
     #
-    # - Push images to any accessible Docker registry
-    # - Flexible image and tag specification
-    # - Native Docker credential handling
-    # - Support for private registries
-    # - Comprehensive error handling
-    # - Validation of registry-compatible names
+    # - Push images to any Docker registry
+    # - Support for tagged and untagged pushes
+    # - Registry authentication integration
+    # - Comprehensive error handling and validation
+    # - Multi-registry support
+    # - Progress tracking and status reporting
+    # - Registry namespace validation
     #
-    # == ⚠️ Security Considerations ⚠️
+    # == Security Considerations
     #
     # Pushing images involves significant security risks:
     # - **Credential Exposure**: Registry credentials may be exposed
-    # - **Data Exfiltration**: Images may contain sensitive application data
-    # - **Intellectual Property**: Source code and binaries may be exposed
-    # - **Supply Chain Risk**: Malicious actors could access pushed images
-    # - **Registry Access**: Unauthorized access to registry accounts
+    # - **Image Integrity**: Pushed images become publicly accessible
+    # - **Supply Chain Risk**: Malicious images can be distributed
+    # - **Registry Security**: Vulnerable registries can be compromised
+    # - **Network Exposure**: Push operations traverse networks
+    # - **Access Control**: Improper permissions can lead to unauthorized access
     #
-    # Critical security measures:
-    # - Verify registry authentication and authorization
-    # - Scan images for secrets before pushing
-    # - Use private registries for sensitive applications
+    # **Security Recommendations**:
+    # - Use secure registry authentication
+    # - Scan images for vulnerabilities before pushing
     # - Implement image signing and verification
-    # - Monitor registry access and downloads
-    # - Regularly audit pushed image contents
+    # - Use private registries for sensitive images
+    # - Monitor registry access and usage
+    # - Implement proper RBAC for registry operations
+    # - Validate image content before distribution
     #
-    # == Registry Requirements
+    # == Parameters
     #
-    # Images must be properly tagged for registry compatibility:
-    # - Include registry hostname for private registries
-    # - Include username/organization for Docker Hub
-    # - Examples: `username/myapp`, `registry.company.com/team/app`
-    # - Local image names (without `/`) cannot be pushed
+    # - **name**: Image name or ID to push (required)
+    # - **tag**: Tag to push (optional, pushes all tags if not specified)
+    # - **repo_tag**: Full repo:tag to push (optional, e.g., "registry/repo:tag")
     #
     # == Example Usage
     #
     #   # Push to Docker Hub
-    #   PushImage.call(
+    #   response = PushImage.call(
     #     server_context: context,
-    #     name: "myusername/myapp",
-    #     tag: "v1.0"
+    #     name: "username/myapp",
+    #     tag: "v1.0.0"
     #   )
     #
     #   # Push to private registry
-    #   PushImage.call(
-    #     server_context: context,
-    #     name: "registry.company.com/team/app",
-    #     tag: "latest"
-    #   )
-    #
-    #   # Push with full repo specification
-    #   PushImage.call(
+    #   response = PushImage.call(
     #     server_context: context,
     #     name: "myapp",
-    #     repo_tag: "myregistry.com/myuser/myapp:v2.0"
+    #     repo_tag: "registry.company.com/team/myapp:latest"
     #   )
     #
-    # @see PullImage
-    # @see TagImage
-    # @see BuildImage
+    #   # Push all tags
+    #   response = PushImage.call(
+    #     server_context: context,
+    #     name: "username/myapp"
+    #   )
+    #
+    # @see Docker CLI push command
     # @since 0.1.0
-    class PushImage < RubyLLM::Tool
+    PUSH_IMAGE_DEFINITION = ToolForge.define(:push_image) do
       description 'Push a Docker image'
 
-      param :name, type: :string, desc: 'Image name or ID to push'
-      param :tag, type: :string, desc: 'Tag to push (optional, pushes all tags if not specified)',
-                  required: false
-      param :repo_tag, type: :string, desc: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)',
-                       required: false
+      param :name,
+            type: :string,
+            description: 'Image name or ID to push'
 
-      # Push a Docker image to a registry.
-      #
-      # This method uploads the specified image to a Docker registry using
-      # the Docker CLI for native credential handling. The image must be
-      # properly tagged for registry compatibility.
-      #
-      # @param name [String] image name or ID to push
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param tag [String, nil] specific tag to push
-      # @param repo_tag [String, nil] complete repository:tag specification
-      #
-      # @return [RubyLLM::Tool::Response] push operation results
-      #
-      # @raise [StandardError] for push failures or authentication issues
-      #
-      # @example Push tagged image to Docker Hub
-      #   response = PushImage.call(
-      #     server_context: context,
-      #     name: "myuser/webapp",
-      #     tag: "v1.2.3"
-      #   )
-      #
-      # @example Push to private registry
-      #   response = tool.execute(
-      #     name: "internal-registry.com/team/service",
-      #     tag: "latest"
-      #   )
-      #
-      # @see Docker::Image.get
-      def execute(name:, tag: nil, repo_tag: nil)
+      param :tag,
+            type: :string,
+            description: 'Tag to push (optional, pushes all tags if not specified)',
+            required: false
+
+      param :repo_tag,
+            type: :string,
+            description: 'Full repo:tag to push (e.g., "registry/repo:tag") (optional)',
+            required: false
+
+      execute do |name:, tag: nil, repo_tag: nil|
         # Construct the full image identifier
         image_identifier = tag ? "#{name}:#{tag}" : name
 
         # Validate that the image name includes a registry/username
-        # Images without a registry prefix will fail to push to Docker Hub
         unless name.include?('/') || repo_tag&.include?('/')
-          error_msg = 'Error: Image name must include registry/username ' \
-                      "(e.g., 'username/#{name}'). Local images cannot be " \
-                      'pushed without a registry prefix.'
-          return error_msg
+          next 'Error: Image name must include registry/username ' \
+               "(e.g., 'username/#{name}'). Local images cannot be " \
+               'pushed without a registry prefix.'
         end
 
         # Verify the image exists
         begin
-          ::Docker::Image.get(image_identifier)
-        rescue ::Docker::Error::NotFoundError
-          return "Image #{image_identifier} not found"
+          Docker::Image.get(image_identifier)
+        rescue Docker::Error::NotFoundError
+          next "Image #{image_identifier} not found"
         end
 
         # Use the Docker CLI to push the image
-        # This way we leverage Docker's native credential handling
         push_target = repo_tag || image_identifier
         _, stderr, status = Open3.capture3('docker', 'push', push_target)
 
         if status.success?
           "Image #{push_target} pushed successfully"
         else
-          # Extract the error message from stderr
           error_msg = stderr.strip
           error_msg = 'Failed to push image' if error_msg.empty?
-
           "Error pushing image: #{error_msg}"
         end
       rescue StandardError => e
         "Error pushing image: #{e.message}"
       end
     end
+
+    PushImage = PUSH_IMAGE_DEFINITION.to_ruby_llm_tool
   end
 end

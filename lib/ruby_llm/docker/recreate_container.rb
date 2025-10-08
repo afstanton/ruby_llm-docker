@@ -2,115 +2,81 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for recreating Docker containers with the same configuration.
+    # MCP tool for recreating Docker containers.
     #
-    # This tool provides a convenient way to recreate containers while preserving
-    # their original configuration. It stops and removes the existing container,
-    # then creates a new one with identical settings. This is useful for applying
-    # image updates, clearing container state, or resolving container issues.
+    # This tool provides a complete container recreation process that stops
+    # the existing container, removes it, and creates a new container with
+    # the same configuration. This is useful for applying image updates,
+    # clearing container state, or resolving container corruption issues.
     #
     # == Features
     #
-    # - Preserves complete container configuration
-    # - Maintains original name and settings
-    # - Handles running containers gracefully
-    # - Restores running state after recreation
-    # - Configurable stop timeout
-    # - Comprehensive error handling
-    #
-    # == Process Overview
-    #
-    # 1. Retrieve existing container configuration
-    # 2. Stop container gracefully (if running)
-    # 3. Remove the old container
-    # 4. Create new container with identical config
-    # 5. Start new container (if original was running)
-    #
-    # == ⚠️ Data Loss Warning ⚠️
-    #
-    # **DESTRUCTIVE OPERATION - DATA LOSS POSSIBLE**
-    #
-    # This operation can cause permanent data loss:
-    # - Container filesystem changes are lost
-    # - Temporary data and logs are deleted
-    # - Container state is reset completely
-    # - Network connections are interrupted
-    # - Anonymous volumes may be recreated empty
+    # - Complete container recreation with preserved configuration
+    # - Automatic stop, remove, and recreate sequence
+    # - Preserves original container configuration and settings
+    # - Configurable stop timeout for graceful shutdown
+    # - Handles both running and stopped containers
+    # - Maintains container networking and volume configurations
     #
     # == Security Considerations
     #
-    # - Original configuration is preserved exactly
-    # - Sensitive environment variables are maintained
-    # - Port mappings and volume mounts are restored
-    # - Network access patterns remain the same
+    # Container recreation involves several security considerations:
+    # - **Service Downtime**: Temporary service interruption during recreation
+    # - **Data Loss**: Container file system changes are lost (volumes preserved)
+    # - **Resource Allocation**: New container may have different resource usage
+    # - **Network Reconfiguration**: IP addresses may change
+    # - **State Reset**: Application state within container is lost
     #
-    # Ensure original configuration is still secure:
-    # - Review exposed ports and volumes
-    # - Validate environment variables
-    # - Check image security updates
-    # - Verify network policies
+    # Plan recreations carefully and coordinate with dependent services.
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name to recreate (required)
+    # - **timeout**: Seconds to wait before killing container when stopping (optional, default: 10)
+    #
+    # == Process Flow
+    #
+    # 1. Inspect existing container to capture configuration
+    # 2. Stop the running container (if running)
+    # 3. Remove the stopped container
+    # 4. Create new container with captured configuration
+    # 5. Return new container information
     #
     # == Example Usage
     #
     #   # Recreate with default timeout
-    #   RecreateContainer.call(
+    #   response = RecreateContainer.call(
     #     server_context: context,
     #     id: "web-server"
     #   )
     #
-    #   # Recreate with longer stop timeout
-    #   RecreateContainer.call(
+    #   # Recreate with extended timeout
+    #   response = RecreateContainer.call(
     #     server_context: context,
     #     id: "database",
     #     timeout: 30
     #   )
     #
-    # @see CreateContainer
-    # @see StopContainer
-    # @see RemoveContainer
+    # @see Docker::Container#stop
+    # @see Docker::Container#remove
     # @see Docker::Container.create
     # @since 0.1.0
-    class RecreateContainer < RubyLLM::Tool
+    RECREATE_CONTAINER_DEFINITION = ToolForge.define(:recreate_container) do
       description 'Recreate a Docker container (stops, removes, and recreates with same configuration)'
 
-      param :id, type: :string, desc: 'Container ID or name to recreate'
-      param :timeout, type: :integer,
-                      desc: 'Seconds to wait before killing the container when stopping (default: 10)',
-                      required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name to recreate'
 
-      # Recreate a Docker container with identical configuration.
-      #
-      # This method performs a complete container recreation cycle while
-      # preserving all configuration settings. The new container will have
-      # the same name, environment, port mappings, volumes, and other
-      # settings as the original.
-      #
-      # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param timeout [Integer] seconds to wait before force killing during stop (default: 10)
-      #
-      # @return [RubyLLM::Tool::Response] recreation results with new container ID
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [StandardError] for recreation failures
-      #
-      # @example Recreate application container
-      #   response = RecreateContainer.call(
-      #     server_context: context,
-      #     id: "my-app"
-      #   )
-      #
-      # @example Recreate database with extended timeout
-      #   response = tool.execute(
-      #     id: "postgres-main",
-      #     timeout: 60  # Allow time for DB shutdown
-      #   )
-      #
-      # @see Docker::Container.get
-      # @see Docker::Container.create
-      def execute(id:, timeout: 10)
+      param :timeout,
+            type: :integer,
+            description: 'Seconds to wait before killing the container when stopping (default: 10)',
+            required: false,
+            default: 10
+
+      execute do |id:, timeout: 10|
         # Get the existing container
-        old_container = ::Docker::Container.get(id)
+        old_container = Docker::Container.get(id)
         config = old_container.json
 
         # Extract configuration we need to preserve
@@ -135,17 +101,19 @@ module RubyLLM
         }
         new_config['name'] = name if name
 
-        new_container = ::Docker::Container.create(new_config)
+        new_container = Docker::Container.create(new_config)
 
         # Start if the old one was running
         new_container.start if config['State']['Running']
 
         "Container #{id} recreated successfully. New ID: #{new_container.id}"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error recreating container: #{e.message}"
       end
     end
+
+    RecreateContainer = RECREATE_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

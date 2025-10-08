@@ -2,141 +2,99 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for removing Docker images.
+    # MCP tool for removing Docker images.
     #
-    # This tool provides the ability to permanently delete Docker images from
-    # the local system to free up disk space and remove unused images. It
-    # supports both regular and forced removal with options for parent image
-    # handling.
+    # This tool provides the ability to delete Docker images from the
+    # local Docker daemon. It supports various removal options including
+    # forced removal and parent image cleanup management.
     #
     # == Features
     #
-    # - Remove images by ID, name, or name:tag
+    # - Remove images by ID, name, or tag
     # - Force removal of images in use
-    # - Control parent image cleanup
+    # - Control untagged parent image cleanup
     # - Comprehensive error handling
+    # - Validation of image existence
     # - Safe removal with dependency checking
-    #
-    # == ⚠️ Data Loss Warning ⚠️
-    #
-    # **DESTRUCTIVE OPERATION - PERMANENT DATA LOSS**
-    #
-    # This operation permanently deletes images and associated data:
-    # - Image layers are deleted from disk
-    # - All tags pointing to the image are removed
-    # - Operation cannot be undone
-    # - Dependent containers may become unusable
-    # - Custom modifications to images are lost
-    #
-    # == Dependency Management
-    #
-    # Docker images have complex dependency relationships:
-    # - **Child Images**: Images built FROM this image
-    # - **Parent Images**: Base images this image depends on
-    # - **Running Containers**: Containers using this image
-    # - **Stopped Containers**: Containers that could be restarted
     #
     # == Security Considerations
     #
-    # Image removal affects system security posture:
-    # - Removes potentially vulnerable software
-    # - May break running applications
-    # - Could remove security patches
-    # - Affects rollback capabilities
+    # Image removal involves important considerations:
+    # - **Data Loss**: Removed images cannot be recovered locally
+    # - **Service Disruption**: Removing images used by running containers
+    # - **Storage Cleanup**: Improper cleanup can leave orphaned layers
+    # - **Registry Impact**: Local removal doesn't affect registry copies
+    # - **Dependency Conflicts**: Force removal can break container dependencies
     #
-    # Best practices:
-    # - Verify no critical containers depend on the image
+    # **Security Recommendations**:
+    # - Verify image is not in use before removal
+    # - Use force option only when necessary
+    # - Consider impact on running containers
     # - Backup important images before removal
-    # - Use force removal judiciously
-    # - Monitor disk space after removal
-    # - Maintain image inventory documentation
+    # - Monitor disk space after removal operations
+    # - Implement image lifecycle policies
     #
-    # == Removal Options
+    # == Parameters
     #
-    # - **Normal Removal**: Only removes if no containers use the image
-    # - **Force Removal**: Removes even if containers depend on it
-    # - **Prune Parents**: Automatically removes unused parent images
-    # - **No Prune**: Keeps parent images even if unused
+    # - **id**: Image ID, name, or name:tag (required)
+    # - **force**: Force removal of the image (optional, default: false)
+    # - **noprune**: Do not delete untagged parents (optional, default: false)
     #
     # == Example Usage
     #
-    #   # Safe removal of unused image
-    #   RemoveImage.call(
+    #   # Remove specific image
+    #   response = RemoveImage.call(
     #     server_context: context,
-    #     id: "old-app:v1.0"
+    #     id: "myapp:old-version"
     #   )
     #
-    #   # Force removal of image in use
-    #   RemoveImage.call(
+    #   # Force remove image in use
+    #   response = RemoveImage.call(
     #     server_context: context,
-    #     id: "broken-image:latest",
+    #     id: "abc123def456",
     #     force: true
     #   )
     #
-    #   # Remove image but keep parent layers
-    #   RemoveImage.call(
+    #   # Remove without cleaning parent images
+    #   response = RemoveImage.call(
     #     server_context: context,
-    #     id: "temp-build:abc123",
+    #     id: "test-image:latest",
     #     noprune: true
     #   )
     #
-    # @see ListImages
-    # @see BuildImage
     # @see Docker::Image#remove
     # @since 0.1.0
-    class RemoveImage < RubyLLM::Tool
+    REMOVE_IMAGE_DEFINITION = ToolForge.define(:remove_image) do
       description 'Remove a Docker image'
 
-      param :id, type: :string, desc: 'Image ID, name, or name:tag'
-      param :force, type: :boolean, desc: 'Force removal of the image (default: false)', required: false
-      param :noprune, type: :boolean, desc: 'Do not delete untagged parents (default: false)', required: false
+      param :id,
+            type: :string,
+            description: 'Image ID, name, or name:tag'
 
-      # Remove a Docker image from the local system.
-      #
-      # This method permanently deletes the specified image from local storage.
-      # By default, it performs safety checks to prevent removal of images with
-      # dependent containers. Force removal bypasses these checks.
-      #
-      # @param id [String] image ID, name, or name:tag to remove
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param force [Boolean] whether to force removal despite dependencies (default: false)
-      # @param noprune [Boolean] whether to preserve parent images (default: false)
-      #
-      # @return [RubyLLM::Tool::Response] removal operation results
-      #
-      # @raise [Docker::Error::NotFoundError] if image doesn't exist
-      # @raise [StandardError] for removal failures or dependency conflicts
-      #
-      # @example Remove unused image
-      #   response = RemoveImage.call(
-      #     server_context: context,
-      #     id: "old-version:1.0"
-      #   )
-      #
-      # @example Force remove problematic image
-      #   response = RemoveImage.call(
-      #     server_context: context,
-      #     id: "corrupted-image",
-      #     force: true
-      #   )
-      #
-      # @example Remove while preserving layers
-      #   response = tool.execute(
-      #     id: "temp-image:build-123",
-      #     noprune: true
-      #   )
-      #
-      # @see Docker::Image#remove
-      def execute(id:, force: false, noprune: false)
-        image = ::Docker::Image.get(id)
+      param :force,
+            type: :boolean,
+            description: 'Force removal of the image (default: false)',
+            required: false,
+            default: false
+
+      param :noprune,
+            type: :boolean,
+            description: 'Do not delete untagged parents (default: false)',
+            required: false,
+            default: false
+
+      execute do |id:, force: false, noprune: false|
+        image = Docker::Image.get(id)
         image.remove(force: force, noprune: noprune)
 
         "Image #{id} removed successfully"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Image #{id} not found"
       rescue StandardError => e
         "Error removing image: #{e.message}"
       end
     end
+
+    RemoveImage = REMOVE_IMAGE_DEFINITION.to_ruby_llm_tool
   end
 end

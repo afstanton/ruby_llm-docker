@@ -2,174 +2,90 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for copying files and directories from host to Docker containers.
+    # MCP tool for copying files and directories to Docker containers.
     #
-    # This tool provides the ability to copy files or entire directory trees from
-    # the host filesystem into running Docker containers. It uses Docker's archive
-    # streaming API to efficiently transfer files while preserving permissions and
-    # directory structure.
-    #
-    # == ⚠️ SECURITY WARNING ⚠️
-    #
-    # This tool can be dangerous as it allows:
-    # - Reading arbitrary files from the host filesystem
-    # - Writing files into container filesystems
-    # - Potentially overwriting critical container files
-    # - Escalating privileges if used with setuid/setgid files
-    # - Exposing sensitive host data to containers
-    #
-    # Security recommendations:
-    # - Validate source paths to prevent directory traversal
-    # - Ensure containers run with minimal privileges
-    # - Monitor file copy operations for sensitive paths
-    # - Use read-only filesystems where possible
-    # - Implement proper access controls on source files
+    # This tool provides the ability to copy files and directories from the
+    # local host filesystem into running Docker containers. It supports both
+    # individual files and entire directory trees, with optional ownership
+    # modification within the container.
     #
     # == Features
     #
-    # - Copy individual files or entire directories
-    # - Preserve file permissions and directory structure
-    # - Optional ownership changes after copy
-    # - Comprehensive error handling
-    # - Support for both absolute and relative paths
+    # - Copy files and directories from host to container
+    # - Supports recursive directory copying
+    # - Preserves file permissions and metadata
+    # - Optional ownership modification after copy
+    # - Works with running containers
+    # - Comprehensive error handling and validation
+    #
+    # == Security Considerations
+    #
+    # File copying operations have significant security implications:
+    # - **File System Access**: Reads local host file system content
+    # - **Container Modification**: Alters container file system state
+    # - **Data Injection**: Can introduce malicious files into containers
+    # - **Permission Escalation**: May affect container security context
+    # - **Resource Consumption**: Large copies can consume storage and I/O
+    # - **Path Traversal**: Improper paths could access unintended locations
+    #
+    # **Security Recommendations**:
+    # - Validate and sanitize all file paths
+    # - Implement access controls for source file locations
+    # - Monitor file copy operations and sizes
+    # - Use read-only mounts where possible
+    # - Apply resource limits to prevent abuse
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name (required)
+    # - **source_path**: Path to file/directory on local filesystem (required)
+    # - **destination_path**: Path inside container for copied content (required)
+    # - **owner**: Owner for copied files (optional, e.g., "1000:1000" or "username:group")
     #
     # == Example Usage
     #
-    #   # Copy a configuration file
-    #   CopyToContainer.call(
+    #   # Copy single file
+    #   response = CopyToContainer.call(
     #     server_context: context,
     #     id: "web-server",
-    #     source_path: "/host/config/nginx.conf",
-    #     destination_path: "/etc/nginx/"
+    #     source_path: "/local/config.conf",
+    #     destination_path: "/etc/nginx/nginx.conf"
     #   )
     #
     #   # Copy directory with ownership change
-    #   CopyToContainer.call(
+    #   response = CopyToContainer.call(
     #     server_context: context,
     #     id: "app-container",
-    #     source_path: "/host/app/src",
-    #     destination_path: "/app/",
-    #     owner: "appuser:appgroup"
+    #     source_path: "/local/app-data",
+    #     destination_path: "/var/lib/app",
+    #     owner: "app:app"
     #   )
     #
     # @see Docker::Container#archive_in_stream
     # @since 0.1.0
-    class CopyToContainer < RubyLLM::Tool
+    COPY_TO_CONTAINER_DEFINITION = ToolForge.define(:copy_to_container) do
       description 'Copy a file or directory from the local filesystem into a running Docker container. ' \
                   'The source path is on the local machine, and the destination path is inside the container.'
 
-      param :id, type: :string, desc: 'Container ID or name'
-      param :source_path, type: :string, desc: 'Path to the file or directory on the local filesystem to copy'
-      param :destination_path, type: :string,
-                               desc: 'Path inside the container where the file/directory should be copied'
-      param :owner, type: :string,
-                    desc: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")',
-                    required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name'
 
-      # Copy files or directories from host filesystem to a Docker container.
-      #
-      # This method creates a tar archive of the source path and streams it into
-      # the specified container using Docker's archive API. The operation preserves
-      # file permissions and directory structure. Optionally, ownership can be
-      # changed after the copy operation completes.
-      #
-      # The source path must exist on the host filesystem and be readable by the
-      # process running the application. The destination path must be a valid path
-      # within the container.
-      #
-      # @param id [String] container ID or name to copy files into
-      # @param source_path [String] path to file/directory on host filesystem
-      # @param destination_path [String] destination path inside container
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param owner [String, nil] ownership specification (e.g., "user:group", "1000:1000")
-      #
-      # @return [RubyLLM::Tool::Response] success/failure message with operation details
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [StandardError] for file system or Docker API errors
-      #
-      # @example Copy configuration file
-      #   response = CopyToContainer.call(
-      #     server_context: context,
-      #     id: "nginx-container",
-      #     source_path: "/etc/nginx/sites-available/default",
-      #     destination_path: "/etc/nginx/sites-enabled/"
-      #   )
-      #
-      # @example Copy directory with ownership
-      #   response = tool.execute(
-      #     id: "app-container",
-      #     source_path: "/local/project",
-      #     destination_path: "/app/",
-      #     owner: "www-data:www-data"
-      #   )
-      #
-      # @see Docker::Container#archive_in_stream
-      # @see #add_to_tar
-      def execute(id:, source_path:, destination_path:, owner: nil)
-        container = ::Docker::Container.get(id)
+      param :source_path,
+            type: :string,
+            description: 'Path to the file or directory on the local filesystem to copy'
 
-        # Verify source path exists
-        return "Source path not found: #{source_path}" unless File.exist?(source_path)
+      param :destination_path,
+            type: :string,
+            description: 'Path inside the container where the file/directory should be copied'
 
-        # Create a tar archive of the source
-        tar_io = StringIO.new
-        tar_io.set_encoding('ASCII-8BIT')
+      param :owner,
+            type: :string,
+            description: 'Owner for the copied files (optional, e.g., "1000:1000" or "username:group")',
+            required: false
 
-        Gem::Package::TarWriter.new(tar_io) do |tar|
-          self.class.add_to_tar(tar, source_path, File.basename(source_path))
-        end
-
-        tar_io.rewind
-
-        # Copy to container
-        container.archive_in_stream(destination_path) do
-          tar_io.read
-        end
-
-        # Optionally change ownership
-        if owner
-          chown_path = File.join(destination_path, File.basename(source_path))
-          container.exec(['chown', '-R', owner, chown_path])
-        end
-
-        file_type = File.directory?(source_path) ? 'directory' : 'file'
-        response_text = "Successfully copied #{file_type} from #{source_path} to #{id}:#{destination_path}"
-        response_text += "\nOwnership changed to #{owner}" if owner
-
-        response_text
-      rescue ::Docker::Error::NotFoundError
-        "Container #{id} not found"
-      rescue StandardError => e
-        "Error copying to container: #{e.message}"
-      end
-
-      # Recursively add files and directories to a tar archive.
-      #
-      # This helper method builds a tar archive by recursively traversing
-      # the filesystem starting from the given path. It preserves file
-      # permissions and handles both files and directories appropriately.
-      #
-      # For directories, it creates directory entries in the tar and then
-      # recursively processes all contained files and subdirectories.
-      # For files, it reads the content and adds it to the tar with
-      # preserved permissions.
-      #
-      # @param tar [Gem::Package::TarWriter] the tar writer instance
-      # @param path [String] the filesystem path to add to the archive
-      # @param archive_path [String] the path within the tar archive
-      #
-      # @return [void]
-      #
-      # @example Add single file
-      #   add_to_tar(tar_writer, "/host/file.txt", "file.txt")
-      #
-      # @example Add directory tree
-      #   add_to_tar(tar_writer, "/host/mydir", "mydir")
-      #
-      # @see Gem::Package::TarWriter#mkdir
-      # @see Gem::Package::TarWriter#add_file_simple
-      def self.add_to_tar(tar, path, archive_path)
+      # Helper method for adding files/directories to tar
+      class_helper :add_to_tar do |tar, path, archive_path|
         if File.directory?(path)
           # Add directory entry
           tar.mkdir(archive_path, File.stat(path).mode)
@@ -191,6 +107,45 @@ module RubyLLM
           end
         end
       end
+
+      execute do |id:, source_path:, destination_path:, owner: nil|
+        container = Docker::Container.get(id)
+
+        # Verify source path exists
+        next "Source path not found: #{source_path}" unless File.exist?(source_path)
+
+        # Create a tar archive of the source
+        tar_io = StringIO.new
+        tar_io.set_encoding('ASCII-8BIT')
+
+        Gem::Package::TarWriter.new(tar_io) do |tar|
+          add_to_tar(tar, source_path, File.basename(source_path))
+        end
+
+        tar_io.rewind
+
+        # Copy to container
+        container.archive_in_stream(destination_path) do
+          tar_io.read
+        end
+
+        # Optionally change ownership
+        if owner
+          chown_path = File.join(destination_path, File.basename(source_path))
+          container.exec(['chown', '-R', owner, chown_path])
+        end
+
+        file_type = File.directory?(source_path) ? 'directory' : 'file'
+        response_text = "Successfully copied #{file_type} from #{source_path} to #{id}:#{destination_path}"
+        response_text += "\nOwnership changed to #{owner}" if owner
+        response_text
+      rescue Docker::Error::NotFoundError
+        "Container #{id} not found"
+      rescue StandardError => e
+        "Error copying to container: #{e.message}"
+      end
     end
+
+    CopyToContainer = COPY_TO_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

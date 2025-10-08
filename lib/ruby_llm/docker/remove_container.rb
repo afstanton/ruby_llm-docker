@@ -2,119 +2,91 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for removing Docker containers.
+    # MCP tool for removing Docker containers.
     #
-    # This tool provides the ability to permanently delete Docker containers
-    # from the system. It supports both graceful removal of stopped containers
-    # and forced removal of running containers. Optionally, it can also remove
-    # associated anonymous volumes.
+    # This tool permanently removes a Docker container from the system,
+    # including its file system, configuration, and metadata. This is a
+    # destructive operation that cannot be undone. The container must
+    # be stopped before removal unless force is specified.
     #
     # == Features
     #
-    # - Remove stopped containers safely
-    # - Force removal of running containers
+    # - Permanent container removal from system
+    # - Supports forced removal of running containers
     # - Optional removal of associated volumes
-    # - Comprehensive error handling
-    # - Works with containers by ID or name
-    #
-    # == Data Loss Warning
-    #
-    # ⚠️ **DESTRUCTIVE OPERATION** ⚠️
-    #
-    # This operation permanently deletes containers and potentially data:
-    # - Container filesystem changes are lost forever
-    # - Running processes are killed immediately (with force)
-    # - Associated volumes may be removed if specified
-    # - Container logs and metadata are deleted
-    # - Operation cannot be undone
+    # - Handles container identification by ID or name
+    # - Provides comprehensive error handling
+    # - Frees all associated system resources
     #
     # == Security Considerations
     #
-    # - Forced removal can cause data corruption
-    # - Volume removal may affect other containers
-    # - Running container removal terminates services abruptly
-    # - Sensitive data in container memory is not securely wiped
+    # Container removal is a destructive operation with implications:
+    # - **Data Loss**: Permanently destroys container file system
+    # - **Configuration Loss**: Removes container settings and metadata
+    # - **Service Disruption**: Eliminates containerized services
+    # - **Resource Recovery**: Frees storage, memory, and system resources
+    # - **Audit Trail**: May remove forensic evidence if needed
     #
-    # Best practices:
-    # - Stop containers gracefully before removal
-    # - Backup important data before removing
-    # - Verify volume dependencies before volume removal
-    # - Use force removal only when necessary
+    # Implement proper backup and approval workflows for production systems.
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name (required)
+    #   - Accepts full container IDs
+    #   - Accepts short container IDs (first 12+ characters)
+    #   - Accepts custom container names
+    # - **force**: Force removal of running container (optional, default: false)
+    # - **volumes**: Remove associated volumes (optional, default: false)
     #
     # == Example Usage
     #
     #   # Remove stopped container
-    #   RemoveContainer.call(
+    #   response = RemoveContainer.call(
     #     server_context: context,
-    #     id: "old-container"
+    #     id: "old-web-server"
     #   )
     #
     #   # Force remove running container with volumes
-    #   RemoveContainer.call(
+    #   response = RemoveContainer.call(
     #     server_context: context,
     #     id: "problematic-container",
     #     force: true,
     #     volumes: true
     #   )
     #
-    # @see StopContainer
-    # @see CreateContainer
-    # @see Docker::Container#delete
+    # @see Docker::Container#remove
     # @since 0.1.0
-    class RemoveContainer < RubyLLM::Tool
+    REMOVE_CONTAINER_DEFINITION = ToolForge.define(:remove_container) do
       description 'Remove a Docker container'
 
-      param :id, desc: 'Container ID or name'
-      param :force, type: :boolean, desc: 'Force removal of running container (default: false)', required: false
-      param :volumes, type: :boolean, desc: 'Remove associated volumes (default: false)', required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name'
 
-      # Remove a Docker container permanently.
-      #
-      # This method deletes a container from the Docker system. By default,
-      # it only removes stopped containers. The force option allows removal
-      # of running containers, and the volumes option removes associated
-      # anonymous volumes.
-      #
-      # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param force [Boolean] whether to force remove running containers (default: false)
-      # @param volumes [Boolean] whether to remove associated volumes (default: false)
-      #
-      # @return [RubyLLM::Tool::Response] removal operation results
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [StandardError] for other removal failures
-      #
-      # @example Remove stopped container
-      #   response = RemoveContainer.call(
-      #     server_context: context,
-      #     id: "finished-job"
-      #   )
-      #
-      # @example Force remove running container
-      #   response = RemoveContainer.call(
-      #     server_context: context,
-      #     id: "stuck-container",
-      #     force: true
-      #   )
-      #
-      # @example Remove container and its volumes
-      #   response = tool.execute(
-      #     id: "temp-container",
-      #     volumes: true
-      #   )
-      #
-      # @see Docker::Container#delete
-      def execute(id:, force: false, volumes: false)
-        container = ::Docker::Container.get(id)
+      param :force,
+            type: :boolean,
+            description: 'Force removal of running container (default: false)',
+            required: false,
+            default: false
+
+      param :volumes,
+            type: :boolean,
+            description: 'Remove associated volumes (default: false)',
+            required: false,
+            default: false
+
+      execute do |id:, force: false, volumes: false|
+        container = Docker::Container.get(id)
         container.delete(force: force, v: volumes)
 
         "Container #{id} removed successfully"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error removing container: #{e.message}"
       end
     end
+
+    RemoveContainer = REMOVE_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

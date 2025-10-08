@@ -2,58 +2,64 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for listing Docker containers.
+    # MCP tool for listing Docker containers.
     #
-    # This tool provides functionality to list all Docker containers on the system,
-    # including both running and stopped containers. It returns detailed information
-    # about each container including names, images, status, ports, and other metadata.
+    # This tool provides comprehensive information about all Docker containers
+    # on the system, including both running and stopped containers. It returns
+    # detailed metadata for each container including names, images, status,
+    # network configuration, and resource usage.
     #
-    # == Security Notes
+    # == Features
     #
-    # This is a read-only operation that provides system information about containers.
-    # While generally safe, it may reveal information about the Docker environment
-    # that could be useful for reconnaissance.
+    # - Lists all containers (running and stopped)
+    # - Provides detailed container metadata
+    # - Shows network configuration and port mappings
+    # - Displays resource usage and statistics
+    # - Includes mount point information
+    # - Shows container labels and annotations
+    #
+    # == Security Considerations
+    #
+    # This tool provides system information that could be useful for:
+    # - **System Reconnaissance**: Reveals running services and configurations
+    # - **Network Discovery**: Shows internal network topology
+    # - **Resource Analysis**: Exposes system resource usage patterns
+    #
+    # Use with appropriate access controls in production environments.
+    #
+    # == Return Format
+    #
+    # Returns an array of container objects with comprehensive metadata:
+    # - Container names and IDs
+    # - Image information and tags
+    # - Current state and status
+    # - Network settings and port bindings
+    # - Mount points and volumes
+    # - Labels and environment details
     #
     # == Example Usage
     #
-    #   # List all containers (default behavior)
-    #   ListContainers.call(server_context: context)
-    #
-    #   # Explicitly request all containers
-    #   ListContainers.call(server_context: context, all: true)
+    #   containers = ListContainers.call(server_context: context)
+    #   containers.each do |container|
+    #     puts "#{container['Names'].first}: #{container['State']}"
+    #   end
     #
     # @see Docker::Container.all
     # @since 0.1.0
-    class ListContainers < RubyLLM::Tool
+    LIST_CONTAINERS_DEFINITION = ToolForge.define(:list_containers) do
       description 'List Docker containers'
 
-      param :all, type: :boolean, desc: 'Show all containers (default shows all containers including stopped ones)',
-                  required: false
+      param :all,
+            type: :boolean,
+            description: 'Show all containers (default shows all containers including stopped ones)',
+            required: false,
+            default: true
 
-      # List all Docker containers with detailed information.
-      #
-      # Retrieves information about all containers on the system, including:
-      # - Container names and IDs
-      # - Image information
-      # - Current state (running, stopped, etc.)
-      # - Port mappings
-      # - Network configuration
-      # - Volume mounts
-      # - Creation and status timestamps
-      #
-      # @param server_context [Object] the RubyLLM context (unused but required)
-      # @param all [Boolean] whether to show all containers (default: true)
-      # @return [RubyLLM::Tool::Response] response containing container information
-      #
-      # @example List all containers
-      #   response = ListContainers.call(server_context: context)
-      #   # Returns detailed info for all containers
-      #
-      # @see Docker::Container.all
-      def execute(all: true)
-        require 'docker'
-        ::Docker::Container.all(all: all).map(&:info).to_s
+      execute do |all: true|
+        Docker::Container.all(all: all).map(&:info)
       end
     end
+
+    ListContainers = LIST_CONTAINERS_DEFINITION.to_ruby_llm_tool
   end
 end

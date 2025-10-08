@@ -2,49 +2,52 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for creating Docker containers without starting them.
+    # MCP tool for creating Docker containers.
     #
-    # This tool provides the ability to create Docker containers from images with
-    # comprehensive configuration options. Unlike RunContainer, this tool only
-    # creates the container but does not start it, allowing for additional
-    # configuration or manual startup control.
+    # This tool creates a new Docker container from a specified image without
+    # starting it. The container is created in a "created" state and can be
+    # started later using the start_container tool. This two-step process
+    # allows for container configuration before execution.
     #
     # == Features
     #
-    # - Create containers from any available Docker image
-    # - Full container configuration support
-    # - Port exposure and binding configuration
-    # - Volume mounting capabilities
-    # - Environment variable configuration
-    # - Custom command specification
-    # - Comprehensive error handling with specific error types
+    # - Creates containers from any available Docker image
+    # - Supports custom container naming
+    # - Configures command execution and environment variables
+    # - Sets up port exposure and network configuration
+    # - Applies advanced host configurations
+    # - Handles container labeling and metadata
     #
     # == Security Considerations
     #
-    # - Containers inherit Docker daemon security context
-    # - Host configuration can expose host resources
-    # - Volume mounts provide filesystem access
-    # - Port bindings expose services to networks
-    # - Environment variables may contain sensitive data
+    # Container creation is a powerful operation that can:
+    # - **Resource Allocation**: Consume system resources and storage
+    # - **Network Access**: Create network endpoints and bindings
+    # - **File System Access**: Mount host directories and volumes
+    # - **Security Context**: Run with elevated privileges if configured
     #
-    # Use appropriate security measures:
-    # - Validate image sources and integrity
-    # - Limit host resource exposure
-    # - Use read-only volumes where appropriate
-    # - Restrict network access through host configuration
-    # - Sanitize environment variables
+    # Implement proper access controls and resource limits.
+    #
+    # == Parameters
+    #
+    # - **image**: Docker image to use (required)
+    # - **name**: Custom container name (optional)
+    # - **cmd**: Command to execute as space-separated string (optional)
+    # - **env**: Environment variables as comma-separated KEY=VALUE pairs (optional)
+    # - **exposed_ports**: Port exposure configuration as JSON object (optional)
+    # - **host_config**: Advanced host configuration as JSON object (optional)
     #
     # == Example Usage
     #
     #   # Simple container creation
-    #   CreateContainer.call(
+    #   response = CreateContainer.call(
     #     server_context: context,
     #     image: "nginx:latest",
     #     name: "web-server"
     #   )
     #
     #   # Advanced container with configuration
-    #   CreateContainer.call(
+    #   response = CreateContainer.call(
     #     server_context: context,
     #     image: "postgres:13",
     #     name: "database",
@@ -56,91 +59,66 @@ module RubyLLM
     #     }
     #   )
     #
-    # @see RunContainer
-    # @see StartContainer
     # @see Docker::Container.create
     # @since 0.1.0
-    class CreateContainer < RubyLLM::Tool
+    CREATE_CONTAINER_DEFINITION = ToolForge.define(:create_container) do
       description 'Create a Docker container'
 
-      param :image, desc: 'Image name to use (e.g., "ubuntu:22.04")'
-      param :name, desc: 'Container name (optional)', required: false
-      param :cmd, desc: 'Command to run (optional)', required: false
-      param :env,
-            desc: 'Environment variables as comma-separated KEY=VALUE pairs ' \
-                  '(optional, e.g., "VAR1=value1,VAR2=value2")',
-            required: false
-      param :exposed_ports, desc: 'Exposed ports as JSON object (optional)', required: false
-      param :host_config, desc: 'Host configuration including port bindings, volumes, etc. as JSON object (optional)',
-                          required: false
+      param :image,
+            type: :string,
+            description: 'Image name to use (e.g., "ubuntu:22.04")'
 
-      # Create a new Docker container from an image.
-      #
-      # This method creates a container with the specified configuration but does
-      # not start it. The container can be started later using StartContainer or
-      # other Docker commands. All configuration parameters are optional except
-      # for the base image.
-      #
-      # @param image [String] Docker image name with optional tag (e.g., "nginx:latest")
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param name [String, nil] custom name for the container
-      # @param cmd [String, nil] command to execute in the container
-      # @param env [String, nil] environment variables as comma-separated KEY=VALUE pairs
-      # @param exposed_ports [Hash, nil] ports to expose in {"port/protocol" => {}} format
-      # @param host_config [Hash, nil] Docker host configuration including bindings and volumes
-      #
-      # @return [RubyLLM::Tool::Response] creation results with container ID and name
-      #
-      # @raise [Docker::Error::NotFoundError] if the specified image doesn't exist
-      # @raise [Docker::Error::ConflictError] if container name already exists
-      # @raise [StandardError] for other creation failures
-      #
-      # @example Create simple container
-      #   response = CreateContainer.call(
-      #     server_context: context,
-      #     image: "alpine:latest",
-      #     name: "test-container"
-      #   )
-      #
-      # @example Create container with full configuration
-      #   response = CreateContainer.call(
-      #     server_context: context,
-      #     image: "redis:7-alpine",
-      #     name: "redis-cache",
-      #     env: "REDIS_PASSWORD=secret",
-      #     exposed_ports: {"6379/tcp" => {}},
-      #     host_config: {
-      #       "PortBindings" => {"6379/tcp" => [{"HostPort" => "6379"}]},
-      #       "RestartPolicy" => {"Name" => "unless-stopped"}
-      #     }
-      #   )
-      #
-      # @see Docker::Container.create
-      def execute(image:, name: nil, cmd: nil, env: nil, exposed_ports: nil, host_config: nil)
+      param :name,
+            type: :string,
+            description: 'Container name (optional)',
+            required: false
+
+      param :cmd,
+            type: :string,
+            description: 'Command to run as space-separated string (optional, e.g., "npm start" or "python app.py")',
+            required: false
+
+      param :env,
+            type: :string,
+            description: 'Environment variables as comma-separated KEY=VALUE pairs (optional)',
+            required: false
+
+      param :exposed_ports,
+            type: :object,
+            description: 'Exposed ports as {"port/protocol": {}} (optional)',
+            required: false
+
+      param :host_config,
+            type: :object,
+            description: 'Host configuration including port bindings, volumes, etc. (optional)',
+            required: false
+
+      execute do |image:, name: nil, cmd: nil, env: nil, exposed_ports: nil, host_config: nil|
         config = { 'Image' => image }
         config['name'] = name if name
-        config['Cmd'] = cmd if cmd
 
-        # Parse environment variables string into array if provided
-        if env && !env.empty?
-          env_array = env.split(',').map(&:strip).select { |e| e.include?('=') }
-          config['Env'] = env_array unless env_array.empty?
-        end
+        # Parse cmd string into array if provided
+        config['Cmd'] = Shellwords.split(cmd) if cmd && !cmd.strip.empty?
+
+        # Parse env string into array if provided
+        config['Env'] = env.split(',').map(&:strip) if env && !env.strip.empty?
 
         config['ExposedPorts'] = exposed_ports if exposed_ports
         config['HostConfig'] = host_config if host_config
 
-        container = ::Docker::Container.create(config)
+        container = Docker::Container.create(config)
         container_name = container.info['Names']&.first&.delete_prefix('/')
 
         "Container created successfully. ID: #{container.id}, Name: #{container_name}"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Image #{image} not found"
-      rescue ::Docker::Error::ConflictError
+      rescue Docker::Error::ConflictError
         "Container with name #{name} already exists"
       rescue StandardError => e
         "Error creating container: #{e.message}"
       end
     end
+
+    CreateContainer = CREATE_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

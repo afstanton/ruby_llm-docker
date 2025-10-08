@@ -2,130 +2,114 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for creating Docker networks.
+    # MCP tool for creating Docker networks.
     #
-    # This tool provides the ability to create custom Docker networks for
-    # container communication and isolation. Networks enable containers to
-    # communicate securely while providing isolation from other network
-    # segments.
+    # This tool provides the ability to create custom Docker networks
+    # for container communication and isolation. Networks enable secure
+    # and controlled communication between containers and external systems.
     #
     # == Features
     #
     # - Create custom Docker networks
-    # - Support for different network drivers
-    # - Duplicate name detection
+    # - Support for multiple network drivers (bridge, overlay, host, etc.)
+    # - Duplicate name checking and validation
+    # - Network configuration and options
     # - Comprehensive error handling
-    # - Flexible network configuration
-    #
-    # == Network Drivers
-    #
-    # Docker supports various network drivers:
-    # - **bridge**: Default isolated network for single-host networking
-    # - **host**: Remove network isolation, use host networking directly
-    # - **overlay**: Multi-host networking for swarm services
-    # - **macvlan**: Assign MAC addresses to containers
-    # - **none**: Disable networking completely
-    # - **Custom**: Third-party network drivers
+    # - Network isolation and security controls
     #
     # == Security Considerations
     #
-    # Network creation affects system security:
-    # - **Network Isolation**: Networks provide security boundaries
-    # - **Traffic Control**: Custom networks enable traffic filtering
-    # - **Access Control**: Networks control container communication
-    # - **DNS Resolution**: Networks provide internal DNS services
+    # Network creation involves important security considerations:
+    # - **Network Isolation**: Improper networks can compromise container isolation
+    # - **Traffic Control**: Networks affect inter-container communication
+    # - **External Access**: Bridge networks may expose containers externally
+    # - **Resource Usage**: Networks consume system resources
+    # - **DNS Resolution**: Custom networks affect service discovery
+    # - **Firewall Bypass**: Networks can bypass host firewall rules
     #
-    # Security implications:
-    # - Bridge networks isolate containers from host network
-    # - Host networks expose containers to all host traffic
-    # - Custom networks should follow least-privilege principles
-    # - Network names may reveal infrastructure details
-    #
-    # Best practices:
-    # - Use descriptive but not sensitive network names
+    # **Security Recommendations**:
+    # - Use appropriate network drivers for use case
     # - Implement network segmentation strategies
-    # - Limit container access to necessary networks only
-    # - Monitor network traffic and connections
+    # - Monitor network traffic and usage
+    # - Avoid exposing internal networks externally
+    # - Use network policies for access control
     # - Regular audit of network configurations
+    #
+    # == Parameters
+    #
+    # - **name**: Name of the network (required)
+    # - **driver**: Driver to use (optional, default: "bridge")
+    # - **check_duplicate**: Check for networks with duplicate names (optional, default: true)
+    #
+    # == Network Drivers
+    #
+    # - **bridge**: Default driver for single-host networking
+    # - **overlay**: Multi-host networking for Docker Swarm
+    # - **host**: Uses host's network stack directly
+    # - **none**: Disables networking for containers
+    # - **macvlan**: Assigns MAC addresses to containers
     #
     # == Example Usage
     #
     #   # Create basic bridge network
-    #   CreateNetwork.call(
+    #   response = CreateNetwork.call(
     #     server_context: context,
     #     name: "app-network"
     #   )
     #
-    #   # Create network with specific driver
-    #   CreateNetwork.call(
+    #   # Create overlay network for swarm
+    #   response = CreateNetwork.call(
     #     server_context: context,
-    #     name: "frontend-net",
-    #     driver: "bridge"
+    #     name: "swarm-network",
+    #     driver: "overlay"
     #   )
     #
-    #   # Create without duplicate checking
-    #   CreateNetwork.call(
+    #   # Create network allowing duplicates
+    #   response = CreateNetwork.call(
     #     server_context: context,
-    #     name: "temp-network",
+    #     name: "test-network",
+    #     driver: "bridge",
     #     check_duplicate: false
     #   )
     #
-    # @see ListNetworks
-    # @see RemoveNetwork
     # @see Docker::Network.create
     # @since 0.1.0
-    class CreateNetwork < RubyLLM::Tool
+    CREATE_NETWORK_DEFINITION = ToolForge.define(:create_network) do
       description 'Create a Docker network'
 
-      param :name, type: :string, desc: 'Name of the network'
-      param :driver, type: :string, desc: 'Driver to use (default: bridge)', required: false
-      param :check_duplicate, type: :boolean, desc: 'Check for networks with duplicate names (default: true)',
-                              required: false
+      param :name,
+            type: :string,
+            description: 'Name of the network'
 
-      # Create a new Docker network.
-      #
-      # This method creates a custom Docker network with the specified name
-      # and driver. The network can then be used by containers for isolated
-      # communication.
-      #
-      # @param name [String] name for the new network
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param driver [String] network driver to use (default: "bridge")
-      # @param check_duplicate [Boolean] whether to check for duplicate names (default: true)
-      #
-      # @return [RubyLLM::Tool::Response] network creation results with network ID
-      #
-      # @raise [Docker::Error::ConflictError] if network name already exists
-      # @raise [StandardError] for other network creation failures
-      #
-      # @example Create application network
-      #   response = CreateNetwork.call(
-      #     server_context: context,
-      #     name: "webapp-network"
-      #   )
-      #
-      # @example Create host network
-      #   response = tool.execute(
-      #     name: "high-performance-net",
-      #     driver: "host"
-      #   )
-      #
-      # @see Docker::Network.create
-      def execute(name:, driver: 'bridge', check_duplicate: true)
+      param :driver,
+            type: :string,
+            description: 'Driver to use (default: bridge)',
+            required: false,
+            default: 'bridge'
+
+      param :check_duplicate,
+            type: :boolean,
+            description: 'Check for networks with duplicate names (default: true)',
+            required: false,
+            default: true
+
+      execute do |name:, driver: 'bridge', check_duplicate: true|
         options = {
           'Name' => name,
           'Driver' => driver,
           'CheckDuplicate' => check_duplicate
         }
 
-        network = ::Docker::Network.create(name, options)
+        network = Docker::Network.create(name, options)
 
         "Network #{name} created successfully. ID: #{network.id}"
-      rescue ::Docker::Error::ConflictError
+      rescue Docker::Error::ConflictError
         "Network #{name} already exists"
       rescue StandardError => e
         "Error creating network: #{e.message}"
       end
     end
+
+    CreateNetwork = CREATE_NETWORK_DEFINITION.to_ruby_llm_tool
   end
 end

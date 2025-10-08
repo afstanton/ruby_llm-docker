@@ -2,87 +2,58 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for listing Docker volumes.
+    # MCP tool for listing Docker volumes.
     #
-    # This tool provides functionality to list all Docker volumes on the system,
-    # including both named volumes and anonymous volumes. It returns comprehensive
-    # information about volume configuration, drivers, mount points, and usage.
+    # This tool provides comprehensive information about all Docker volumes
+    # configured on the system. It returns detailed volume metadata including
+    # mount points, drivers, usage statistics, and associated containers.
     #
     # == Features
     #
-    # - List all Docker volumes on the system
-    # - Comprehensive volume metadata
-    # - No configuration required
-    # - Read-only operation
-    # - Includes named and anonymous volumes
-    #
-    # == Volume Information Included
-    #
-    # The response typically includes:
-    # - **Volume Name**: Unique identifier for the volume
-    # - **Driver**: Volume driver (local, nfs, etc.)
-    # - **Mountpoint**: Physical location on host filesystem
-    # - **Labels**: User-defined metadata labels
-    # - **Options**: Driver-specific configuration options
-    # - **Scope**: Volume scope (local, global)
-    # - **CreatedAt**: Volume creation timestamp
-    #
-    # == Volume Types
-    #
-    # Docker manages different types of volumes:
-    # - **Named Volumes**: User-created persistent volumes
-    # - **Anonymous Volumes**: Automatically created temporary volumes
-    # - **Bind Mounts**: Direct host directory mounts (not shown in volume list)
-    # - **tmpfs Mounts**: Memory-based temporary filesystems (not shown)
+    # - Lists all Docker volumes (named and anonymous)
+    # - Provides detailed volume metadata
+    # - Shows mount points and storage locations
+    # - Displays driver information and options
+    # - Includes creation timestamps and labels
+    # - Reports volume scope and capabilities
     #
     # == Security Considerations
     #
-    # This is a read-only operation that reveals storage information:
-    # - Exposes data storage architecture
-    # - Shows volume naming patterns
-    # - May reveal application data locations
-    # - Could aid in data discovery attacks
+    # Volume information can reveal sensitive details about:
+    # - **Data Storage**: Persistent data locations and structures
+    # - **File System Access**: Mount points and storage paths
+    # - **Container Dependencies**: Volume usage patterns
+    # - **Data Persistence**: Backup and recovery points
     #
-    # While generally safe, consider access control:
-    # - Limit exposure of volume inventory
-    # - Be cautious with sensitive volume names
-    # - Monitor for unauthorized volume discovery
-    # - Consider data classification implications
+    # Monitor access to this tool and implement appropriate controls.
+    #
+    # == Return Format
+    #
+    # Returns an array of volume objects with comprehensive metadata:
+    # - Volume names and mount points
+    # - Driver types and configurations
+    # - Creation timestamps
+    # - Labels and options
+    # - Scope information
+    # - Storage usage details
     #
     # == Example Usage
     #
-    #   # List all volumes
-    #   ListVolumes.call(server_context: context)
+    #   volumes = ListVolumes.call(server_context: context)
+    #   volumes.each do |volume|
+    #     puts "#{volume['Name']}: #{volume['Mountpoint']}"
+    #   end
     #
-    # @example Usage in data management
-    #   # Get available volumes before container creation
-    #   volumes_response = ListVolumes.call(server_context: context)
-    #   # Use volume information to select appropriate storage
-    #
-    # @see CreateVolume
-    # @see RemoveVolume
     # @see Docker::Volume.all
     # @since 0.1.0
-    class ListVolumes < RubyLLM::Tool
+    LIST_VOLUMES_DEFINITION = ToolForge.define(:list_volumes) do
       description 'List Docker volumes'
 
-      # List all Docker volumes available on the system.
-      #
-      # This method retrieves information about all Docker volumes, including
-      # both named volumes created by users and anonymous volumes created
-      # automatically by containers. The information includes comprehensive
-      # metadata for each volume.
-      #
-      # @return [String] comprehensive volume information
-      #
-      # @example List all volumes
-      #   response = tool.execute
-      #   # Returns detailed info for all Docker volumes
-      #
-      # @see Docker::Volume.all
-      def execute
-        ::Docker::Volume.all.map(&:info).to_s
+      execute do
+        Docker::Volume.all.map(&:info)
       end
     end
+
+    ListVolumes = LIST_VOLUMES_DEFINITION.to_ruby_llm_tool
   end
 end

@@ -2,143 +2,124 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for executing commands inside running Docker containers.
+    # MCP tool for executing commands inside Docker containers.
     #
-    # This tool provides the ability to execute arbitrary commands inside running
-    # Docker containers, with full control over execution environment including
-    # working directory, user context, environment variables, and stdin input.
-    #
-    # == ⚠️ CRITICAL SECURITY WARNING ⚠️
-    #
-    # This tool is EXTREMELY DANGEROUS as it allows arbitrary command execution
-    # within Docker containers. This can be used to:
-    # - Execute malicious code inside containers
-    # - Access sensitive data within container filesystems
-    # - Escalate privileges if container is poorly configured
-    # - Perform lateral movement within containerized environments
-    # - Exfiltrate data from applications
-    #
-    # ONLY use this tool in trusted environments with proper security controls:
-    # - Ensure containers run with minimal privileges
-    # - Use read-only filesystems where possible
-    # - Implement proper network segmentation
-    # - Monitor and audit all command executions
-    # - Never expose this tool to untrusted clients
+    # This tool provides the ability to execute arbitrary commands inside
+    # running Docker containers. It supports interactive and non-interactive
+    # execution, environment variable injection, working directory specification,
+    # and user context switching within the container.
     #
     # == Features
     #
-    # - Execute commands with custom working directory
-    # - Run commands as specific users
-    # - Set custom environment variables
-    # - Provide stdin input to commands
-    # - Configurable timeout protection
-    # - Comprehensive error handling
-    # - Separate stdout/stderr capture
+    # - Execute arbitrary commands in running containers
+    # - Support for command arguments and shell parsing
+    # - Environment variable injection
+    # - Working directory specification
+    # - User context switching (run as specific user)
+    # - Standard input, output, and error handling
+    # - Configurable execution timeouts
+    #
+    # == Security Considerations
+    #
+    # **CRITICAL WARNING**: This tool provides arbitrary command execution
+    # capabilities with significant security implications:
+    #
+    # - **Code Execution**: Can run any command available in the container
+    # - **File System Access**: Can read, write, and modify container files
+    # - **Network Access**: Can initiate network connections from container
+    # - **Process Manipulation**: Can start, stop, and signal processes
+    # - **Data Exposure**: Can access sensitive data within the container
+    # - **Privilege Escalation**: May exploit container or kernel vulnerabilities
+    # - **Resource Consumption**: Can consume container and host resources
+    #
+    # **Security Recommendations**:
+    # - Implement strict access controls and authentication
+    # - Use dedicated execution containers with minimal privileges
+    # - Monitor and log all command executions
+    # - Apply resource limits and timeouts
+    # - Validate and sanitize all command inputs
+    # - Consider using read-only file systems where possible
+    # - Implement network segmentation for container environments
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name (required)
+    # - **cmd**: Command to execute (shell-parsed into arguments) (required)
+    # - **working_dir**: Working directory for command execution (optional)
+    # - **user**: User to run the command as (optional, e.g., "1000" or "username")
+    # - **env**: Environment variables as comma-separated KEY=VALUE pairs (optional)
+    # - **stdin**: Input to send to command via stdin (optional)
+    # - **timeout**: Timeout in seconds (optional, default: 60)
     #
     # == Example Usage
     #
-    #   # Simple command execution
-    #   ExecContainer.call(
+    #   # Basic command execution
+    #   response = ExecContainer.call(
     #     server_context: context,
-    #     id: "my-container",
-    #     cmd: "ls -la /app"
+    #     id: "web-container",
+    #     cmd: "nginx -t"
     #   )
     #
-    #   # Advanced execution with custom environment
-    #   ExecContainer.call(
+    #   # Advanced execution with environment
+    #   response = ExecContainer.call(
     #     server_context: context,
-    #     id: "web-server",
-    #     cmd: "python manage.py migrate",
+    #     id: "app-container",
+    #     cmd: "bundle exec rails console",
     #     working_dir: "/app",
-    #     user: "appuser",
-    #     env: ["DJANGO_ENV=production", "DEBUG=false"],
-    #     timeout: 120
+    #     user: "rails",
+    #     env: "RAILS_ENV=production,DEBUG=true",
+    #     timeout: 300
     #   )
     #
     # @see Docker::Container#exec
     # @since 0.1.0
-    class ExecContainer < RubyLLM::Tool
+    EXEC_CONTAINER_DEFINITION = ToolForge.define(:exec_container) do
       description 'Execute a command inside a running Docker container. ' \
                   'WARNING: This provides arbitrary command execution within the container. ' \
                   'Ensure proper security measures are in place.'
 
-      param :id, type: :string, desc: 'Container ID or name'
-      param :cmd, type: :string, desc: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
-      param :working_dir, type: :string, desc: 'Working directory for the command (optional)', required: false
-      param :user, type: :string, desc: 'User to run the command as (optional, e.g., "1000" or "username")',
-                   required: false
-      param :env, type: :string,
-                  desc: 'Environment variables as comma-separated KEY=VALUE pairs ' \
-                        '(optional, e.g., "VAR1=value1,VAR2=value2")',
-                  required: false
-      param :stdin, type: :string, desc: 'Input to send to the command via stdin (optional)', required: false
-      param :timeout, type: :integer, desc: 'Timeout in seconds (optional, default: 60)', required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name'
 
-      # Execute a command inside a running Docker container.
-      #
-      # This method provides comprehensive command execution capabilities within
-      # Docker containers, including advanced features like custom user context,
-      # environment variables, working directory, and stdin input.
-      #
-      # The command is parsed using shell-like syntax with support for quoted
-      # arguments. Output is captured separately for stdout and stderr, and
-      # the exit code is reported.
-      #
-      # @param id [String] container ID or name to execute command in
-      # @param cmd [String] command to execute (shell-parsed into arguments)
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param working_dir [String, nil] working directory for command execution
-      # @param user [String, nil] user to run command as (username or UID)
-      # @param env [String, nil] environment variables as comma-separated KEY=VALUE pairs
-      # @param stdin [String, nil] input to send to command via stdin
-      # @param timeout [Integer] maximum execution time in seconds (default: 60)
-      #
-      # @return [RubyLLM::Tool::Response] execution results including stdout, stderr, and exit code
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [Docker::Error::TimeoutError] if execution exceeds timeout
-      # @raise [StandardError] for other execution failures
-      #
-      # @example Basic command execution
-      #   response = ExecContainer.call(
-      #     server_context: context,
-      #     id: "web-container",
-      #     cmd: "nginx -t"
-      #   )
-      #
-      # @example Advanced execution with environment
-      #   response = tool.execute(
-      #     id: "app-container",
-      #     cmd: "bundle exec rails console",
-      #     working_dir: "/app",
-      #     user: "rails",
-      #     env: ["RAILS_ENV=production"],
-      #     timeout: 300
-      #   )
-      #
-      # @see Docker::Container#exec
-      def execute(id:, cmd:, working_dir: nil, user: nil,
-                  env: nil, stdin: nil, timeout: 60)
-        container = ::Docker::Container.get(id)
+      param :cmd,
+            type: :string,
+            description: 'Command to execute (e.g., "ls -la /app" or "python script.py")'
+
+      param :working_dir,
+            type: :string,
+            description: 'Working directory for the command (optional)',
+            required: false
+
+      param :user,
+            type: :string,
+            description: 'User to run the command as (optional, e.g., "1000" or "username")',
+            required: false
+
+      param :env,
+            type: :string,
+            description: 'Environment variables as comma-separated KEY=VALUE pairs (optional)',
+            required: false
+
+      param :stdin,
+            type: :string,
+            description: 'Input to send to the command via stdin (optional)',
+            required: false
+
+      param :timeout,
+            type: :integer,
+            description: 'Timeout in seconds (optional, default: 60)',
+            required: false,
+            default: 60
+
+      execute do |id:, cmd:, working_dir: nil, user: nil, env: nil, stdin: nil, timeout: 60|
+        container = Docker::Container.get(id)
 
         # Parse command string into array
-        # Simple shell-like parsing: split on spaces but respect quoted strings
         cmd_array = Shellwords.split(cmd)
 
-        # Parse environment variables string into array if provided
-        env_array = nil
-        env_array = env.split(',').map(&:strip).select { |e| e.include?('=') } if env && !env.empty?
-
-        # Build exec options
-        exec_options = {
-          'Cmd' => cmd_array,
-          'AttachStdout' => true,
-          'AttachStderr' => true
-        }
-        exec_options['WorkingDir'] = working_dir if working_dir
-        exec_options['User'] = user if user
-        exec_options['Env'] = env_array if env_array
-        exec_options['AttachStdin'] = true if stdin
+        # Parse environment variables from comma-separated string to array
+        env.split(',').map(&:strip) if env && !env.empty?
 
         # Execute the command
         stdout_data = []
@@ -156,7 +137,7 @@ module RubyLLM
           stdout_data = result[0]
           stderr_data = result[1]
           exit_code = result[2]
-        rescue ::Docker::Error::TimeoutError
+        rescue Docker::Error::TimeoutError
           return "Command execution timed out after #{timeout} seconds"
         end
 
@@ -175,11 +156,13 @@ module RubyLLM
         end
 
         response_text.strip
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error executing command: #{e.message}"
       end
     end
+
+    ExecContainer = EXEC_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

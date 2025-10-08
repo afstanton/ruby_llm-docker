@@ -2,108 +2,82 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for stopping running Docker containers.
+    # MCP tool for stopping Docker containers.
     #
-    # This tool provides the ability to gracefully stop running Docker containers
-    # with configurable timeout handling. It sends a SIGTERM signal to the main
-    # process and waits for the specified timeout before forcibly killing the
-    # container with SIGKILL.
+    # This tool gracefully stops a running Docker container by sending a
+    # SIGTERM signal to the main process, allowing it to shut down cleanly.
+    # If the container doesn't stop within the specified timeout, it will
+    # be forcefully killed with SIGKILL.
     #
     # == Features
     #
     # - Graceful container shutdown with SIGTERM
-    # - Configurable timeout before force kill
-    # - Works with containers by ID or name
-    # - Comprehensive error handling
-    # - Safe for already stopped containers
-    #
-    # == Shutdown Process
-    #
-    # 1. Send SIGTERM to container's main process
-    # 2. Wait for graceful shutdown up to timeout
-    # 3. Send SIGKILL if container hasn't stopped
-    # 4. Return success when container is stopped
+    # - Configurable timeout for forced termination
+    # - Supports container identification by ID or name
+    # - Handles both running and already-stopped containers
+    # - Provides clear feedback on operation status
+    # - Preserves container and data integrity
     #
     # == Security Considerations
     #
     # Stopping containers affects service availability:
-    # - Services become unavailable immediately
-    # - Network connections are terminated
-    # - Data may be lost if not properly persisted
-    # - Dependent services may be affected
+    # - **Service Disruption**: Terminates running services and processes
+    # - **Data Integrity**: May interrupt ongoing operations
+    # - **Resource Release**: Frees CPU, memory, and network resources
+    # - **State Preservation**: Maintains container state for future restart
     #
-    # Best practices:
-    # - Ensure data persistence before stopping
-    # - Consider impact on dependent services
-    # - Use appropriate timeout for graceful shutdown
-    # - Monitor application logs during shutdown
+    # Coordinate container stops with dependent services and users.
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name (required)
+    #   - Accepts full container IDs
+    #   - Accepts short container IDs (first 12+ characters)
+    #   - Accepts custom container names
+    # - **timeout**: Seconds to wait before killing container (optional, default: 10)
     #
     # == Example Usage
     #
-    #   # Stop with default timeout (10 seconds)
-    #   StopContainer.call(
+    #   # Stop with default timeout
+    #   response = StopContainer.call(
     #     server_context: context,
     #     id: "web-server"
     #   )
     #
     #   # Stop with custom timeout
-    #   StopContainer.call(
+    #   response = StopContainer.call(
     #     server_context: context,
     #     id: "database",
     #     timeout: 30
     #   )
     #
-    # @see StartContainer
-    # @see RemoveContainer
     # @see Docker::Container#stop
     # @since 0.1.0
-    class StopContainer < RubyLLM::Tool
+    STOP_CONTAINER_DEFINITION = ToolForge.define(:stop_container) do
       description 'Stop a Docker container'
 
-      param :id, desc: 'Container ID or name'
-      param :timeout, type: :integer, desc: 'Seconds to wait before killing the container (default: 10)',
-                      required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name'
 
-      # Stop a running Docker container gracefully.
-      #
-      # This method stops a container by sending SIGTERM to the main process
-      # and waiting for the specified timeout before sending SIGKILL. The
-      # operation is idempotent - stopping an already stopped container
-      # typically succeeds without error.
-      #
-      # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param timeout [Integer] seconds to wait before force killing (default: 10)
-      #
-      # @return [RubyLLM::Tool::Response] stop operation results
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [StandardError] for other stop failures
-      #
-      # @example Stop with default timeout
-      #   response = StopContainer.call(
-      #     server_context: context,
-      #     id: "nginx-server"
-      #   )
-      #
-      # @example Stop database with longer timeout
-      #   response = StopContainer.call(
-      #     server_context: context,
-      #     id: "postgres-db",
-      #     timeout: 60  # Allow more time for DB shutdown
-      #   )
-      #
-      # @see Docker::Container#stop
-      def execute(id:, timeout: 10)
-        container = ::Docker::Container.get(id)
+      param :timeout,
+            type: :integer,
+            description: 'Seconds to wait before killing the container (default: 10)',
+            required: false,
+            default: 10
+
+      execute do |id:, timeout: 10|
+        container = Docker::Container.get(id)
         container.stop('timeout' => timeout)
 
         "Container #{id} stopped successfully"
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error stopping container: #{e.message}"
       end
     end
+
+    StopContainer = STOP_CONTAINER_DEFINITION.to_ruby_llm_tool
   end
 end

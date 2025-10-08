@@ -2,128 +2,106 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for creating Docker volumes.
+    # MCP tool for creating Docker volumes.
     #
-    # This tool provides the ability to create persistent Docker volumes for
-    # data storage that survives container lifecycle events. Volumes are the
-    # preferred mechanism for persisting data generated and used by Docker
-    # containers.
+    # This tool provides the ability to create Docker volumes for persistent
+    # data storage. Volumes are essential for maintaining data across container
+    # lifecycles and enabling data sharing between containers.
     #
     # == Features
     #
-    # - Create named persistent volumes
-    # - Support for different volume drivers
+    # - Create named Docker volumes
+    # - Support for multiple volume drivers
+    # - Persistent data storage management
+    # - Volume driver configuration
     # - Comprehensive error handling
-    # - Duplicate name detection
-    # - Flexible storage configuration
-    #
-    # == Volume Drivers
-    #
-    # Docker supports various volume drivers:
-    # - **local**: Default driver using host filesystem
-    # - **nfs**: Network File System for shared storage
-    # - **cifs**: Common Internet File System
-    # - **rexray**: External storage orchestration
-    # - **Custom**: Third-party volume drivers
-    #
-    # == Persistence Benefits
-    #
-    # Docker volumes provide several advantages:
-    # - **Data Persistence**: Survive container deletion and recreation
-    # - **Performance**: Better performance than bind mounts on Docker Desktop
-    # - **Portability**: Can be moved between containers and hosts
-    # - **Backup**: Easier to backup and restore than container filesystems
-    # - **Sharing**: Can be shared between multiple containers
-    # - **Management**: Managed by Docker daemon with proper lifecycle
+    # - Volume lifecycle management
     #
     # == Security Considerations
     #
-    # Volume creation affects data security:
-    # - **Data Isolation**: Volumes provide isolation between containers
-    # - **Access Control**: Volume permissions affect data access
-    # - **Storage Location**: Local volumes stored on host filesystem
-    # - **Shared Access**: Multiple containers can access the same volume
+    # Volume creation involves important security considerations:
+    # - **Data Persistence**: Volumes store data beyond container lifecycle
+    # - **Access Control**: Volume permissions affect data security
+    # - **Data Isolation**: Improper volumes can compromise data separation
+    # - **Storage Security**: Volume drivers may have security implications
+    # - **Resource Usage**: Volumes consume disk space and system resources
+    # - **Data Leakage**: Shared volumes can expose sensitive data
     #
-    # Security implications:
-    # - Volumes persist data beyond container lifecycle
-    # - Volume names may reveal application details
-    # - Shared volumes can leak data between containers
-    # - Storage driver choice affects security properties
-    #
-    # Best practices:
-    # - Use descriptive but not sensitive volume names
-    # - Implement proper volume access controls
+    # **Security Recommendations**:
+    # - Use appropriate volume drivers for security requirements
+    # - Implement proper access controls and permissions
+    # - Monitor volume usage and capacity
     # - Regular backup of critical volume data
-    # - Monitor volume usage and access patterns
-    # - Choose appropriate drivers for security requirements
+    # - Audit volume access patterns
+    # - Use encryption for sensitive data volumes
+    # - Implement volume lifecycle policies
+    #
+    # == Parameters
+    #
+    # - **name**: Name of the volume (required)
+    # - **driver**: Driver to use (optional, default: "local")
+    #
+    # == Volume Drivers
+    #
+    # - **local**: Default driver for local filesystem storage
+    # - **nfs**: Network File System driver for shared storage
+    # - **cifs**: Common Internet File System driver
+    # - **rexray**: REX-Ray driver for cloud storage integration
+    # - **convoy**: Convoy driver for snapshot management
     #
     # == Example Usage
     #
     #   # Create basic local volume
-    #   CreateVolume.call(
+    #   response = CreateVolume.call(
     #     server_context: context,
     #     name: "app-data"
     #   )
     #
     #   # Create volume with specific driver
-    #   CreateVolume.call(
+    #   response = CreateVolume.call(
     #     server_context: context,
     #     name: "shared-storage",
     #     driver: "nfs"
     #   )
     #
-    # @see ListVolumes
-    # @see RemoveVolume
+    #   # Create database volume
+    #   response = CreateVolume.call(
+    #     server_context: context,
+    #     name: "postgres-data",
+    #     driver: "local"
+    #   )
+    #
     # @see Docker::Volume.create
     # @since 0.1.0
-    class CreateVolume < RubyLLM::Tool
+    CREATE_VOLUME_DEFINITION = ToolForge.define(:create_volume) do
       description 'Create a Docker volume'
 
-      param :name, type: :string, desc: 'Name of the volume'
-      param :driver, type: :string, desc: 'Driver to use (default: local)', required: false
+      param :name,
+            type: :string,
+            description: 'Name of the volume'
 
-      # Create a new Docker volume for persistent data storage.
-      #
-      # This method creates a named Docker volume that can be used by containers
-      # for persistent data storage. The volume will survive container deletion
-      # and can be shared between multiple containers.
-      #
-      # @param name [String] name for the new volume
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param driver [String] volume driver to use (default: "local")
-      #
-      # @return [RubyLLM::Tool::Response] volume creation results
-      #
-      # @raise [Docker::Error::ConflictError] if volume name already exists
-      # @raise [StandardError] for other volume creation failures
-      #
-      # @example Create application data volume
-      #   response = CreateVolume.call(
-      #     server_context: context,
-      #     name: "webapp-data"
-      #   )
-      #
-      # @example Create NFS volume
-      #   response = tool.execute(
-      #     name: "shared-files",
-      #     driver: "nfs"
-      #   )
-      #
-      # @see Docker::Volume.create
-      def execute(name:, driver: 'local')
+      param :driver,
+            type: :string,
+            description: 'Driver to use (default: local)',
+            required: false,
+            default: 'local'
+
+      execute do |name:, driver: 'local'|
         options = {
           'Name' => name,
           'Driver' => driver
         }
 
-        ::Docker::Volume.create(name, options)
+        Docker::Volume.create(name, options)
 
         "Volume #{name} created successfully"
-      rescue ::Docker::Error::ConflictError
+      rescue Docker::Error::ConflictError
         "Volume #{name} already exists"
       rescue StandardError => e
         "Error creating volume: #{e.message}"
       end
     end
+
+    CreateVolume = CREATE_VOLUME_DEFINITION.to_ruby_llm_tool
   end
 end

@@ -2,117 +2,93 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for retrieving Docker container logs.
+    # MCP tool for fetching Docker container logs.
     #
-    # This tool provides access to container logs with flexible filtering and
-    # formatting options. It can retrieve both stdout and stderr logs with
-    # optional timestamps and tail functionality for recent entries.
+    # This tool retrieves log output from Docker containers, including both
+    # standard output and standard error streams. It supports filtering by
+    # stream type, limiting output length, timestamp inclusion, and retrieving
+    # logs from both running and stopped containers.
     #
     # == Features
     #
-    # - Retrieve stdout and/or stderr logs
-    # - Optional timestamp inclusion
-    # - Tail functionality for recent logs
-    # - Flexible log stream selection
-    # - Comprehensive error handling
-    # - Works with any container state
-    #
-    # == Log Sources
-    #
-    # Docker containers can generate logs from multiple sources:
-    # - **stdout**: Standard output from container processes
-    # - **stderr**: Standard error from container processes
-    # - **timestamps**: Docker-generated timestamps for each log line
+    # - Fetch logs from running and stopped containers
+    # - Separate or combined stdout and stderr streams
+    # - Configurable output length limiting (tail functionality)
+    # - Optional timestamp inclusion for log entries
+    # - Support for container identification by ID or name
+    # - Comprehensive error handling and status reporting
     #
     # == Security Considerations
     #
     # Container logs may contain sensitive information:
-    # - Application secrets and API keys
-    # - User data and personal information
-    # - Internal system information
-    # - Database connection strings
-    # - Error messages with stack traces
+    # - **Application Data**: Database queries, API keys, user data
+    # - **System Information**: Internal paths, configuration details
+    # - **Error Details**: Stack traces revealing application internals
+    # - **Access Patterns**: User behavior and system usage information
+    # - **Debugging Information**: Temporary credentials or session data
     #
-    # Security recommendations:
-    # - Review log content before sharing
-    # - Limit access to container logs
-    # - Sanitize logs in production environments
-    # - Use log rotation to manage log size
-    # - Be cautious with log forwarding
+    # Implement proper access controls and data sanitization for log access.
+    #
+    # == Parameters
+    #
+    # - **id**: Container ID or name (required)
+    # - **stdout**: Include stdout in logs (optional, default: true)
+    # - **stderr**: Include stderr in logs (optional, default: true)
+    # - **timestamps**: Show timestamps for log entries (optional, default: false)
+    # - **tail**: Number of lines to show from end of logs (optional, default: all)
     #
     # == Example Usage
     #
-    #   # Get all logs
-    #   FetchContainerLogs.call(
+    #   # Fetch all logs
+    #   response = FetchContainerLogs.call(
     #     server_context: context,
     #     id: "web-server"
     #   )
     #
-    #   # Get recent logs with timestamps
-    #   FetchContainerLogs.call(
+    #   # Fetch recent errors with timestamps
+    #   response = FetchContainerLogs.call(
     #     server_context: context,
     #     id: "app-container",
-    #     tail: 100,
-    #     timestamps: true
-    #   )
-    #
-    #   # Get only error logs
-    #   FetchContainerLogs.call(
-    #     server_context: context,
-    #     id: "database",
     #     stdout: false,
-    #     stderr: true
+    #     stderr: true,
+    #     timestamps: true,
+    #     tail: 100
     #   )
     #
-    # @see ExecContainer
     # @see Docker::Container#logs
     # @since 0.1.0
-    class FetchContainerLogs < RubyLLM::Tool
+    FETCH_CONTAINER_LOGS_DEFINITION = ToolForge.define(:fetch_container_logs) do
       description 'Fetch Docker container logs'
 
-      param :id, type: :string, desc: 'Container ID or name'
-      param :stdout, type: :boolean, desc: 'Include stdout (default: true)', required: false
-      param :stderr, type: :boolean, desc: 'Include stderr (default: true)', required: false
-      param :tail, type: :integer, desc: 'Number of lines to show from the end of logs (default: all)',
-                   required: false
-      param :timestamps, type: :boolean, desc: 'Show timestamps (default: false)', required: false
+      param :id,
+            type: :string,
+            description: 'Container ID or name'
 
-      # Retrieve logs from a Docker container.
-      #
-      # This method fetches logs from the specified container with configurable
-      # options for log sources (stdout/stderr), formatting (timestamps), and
-      # quantity (tail). The logs are returned as a text response.
-      #
-      # @param id [String] container ID (full or short) or container name
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param stdout [Boolean] whether to include stdout logs (default: true)
-      # @param stderr [Boolean] whether to include stderr logs (default: true)
-      # @param tail [Integer, nil] number of recent lines to return (nil for all)
-      # @param timestamps [Boolean] whether to include timestamps (default: false)
-      #
-      # @return [RubyLLM::Tool::Response] container logs as text
-      #
-      # @raise [Docker::Error::NotFoundError] if container doesn't exist
-      # @raise [StandardError] for other log retrieval failures
-      #
-      # @example Get all logs
-      #   response = FetchContainerLogs.call(
-      #     server_context: context,
-      #     id: "nginx-server"
-      #   )
-      #
-      # @example Get recent error logs with timestamps
-      #   response = tool.execute(
-      #     id: "app-container",
-      #     stdout: false,
-      #     stderr: true,
-      #     tail: 50,
-      #     timestamps: true
-      #   )
-      #
-      # @see Docker::Container#logs
-      def execute(id:, stdout: true, stderr: true, tail: nil, timestamps: false)
-        container = ::Docker::Container.get(id)
+      param :stdout,
+            type: :boolean,
+            description: 'Include stdout (default: true)',
+            required: false,
+            default: true
+
+      param :stderr,
+            type: :boolean,
+            description: 'Include stderr (default: true)',
+            required: false,
+            default: true
+
+      param :tail,
+            type: :integer,
+            description: 'Number of lines to show from the end of logs (default: all)',
+            required: false
+
+      param :timestamps,
+            type: :boolean,
+            description: 'Show timestamps (default: false)',
+            required: false,
+            default: false
+
+      execute do |id:, stdout: true, stderr: true, tail: nil, timestamps: false|
+        container = Docker::Container.get(id)
 
         options = {
           stdout: stdout,
@@ -122,11 +98,13 @@ module RubyLLM
         options[:tail] = tail if tail
 
         container.logs(options)
-      rescue ::Docker::Error::NotFoundError
+      rescue Docker::Error::NotFoundError
         "Container #{id} not found"
       rescue StandardError => e
         "Error fetching logs: #{e.message}"
       end
     end
+
+    FetchContainerLogs = FETCH_CONTAINER_LOGS_DEFINITION.to_ruby_llm_tool
   end
 end

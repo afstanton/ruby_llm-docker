@@ -2,94 +2,92 @@
 
 module RubyLLM
   module Docker
-    # RubyLLM tool for building Docker images from Dockerfile content.
+    # MCP tool for building Docker images.
     #
-    # This tool provides the ability to build Docker images by providing Dockerfile
-    # content as a string. It supports optional tagging of the resulting image for
-    # easy identification and reuse.
-    #
-    # == Security Considerations
-    #
-    # Building Docker images can be potentially dangerous:
-    # - Dockerfile commands execute with Docker daemon privileges
-    # - Images can contain malicious software or backdoors
-    # - Build process can access host resources (network, files)
-    # - Base images may contain vulnerabilities
-    # - Build context may expose sensitive information
-    #
-    # Security recommendations:
-    # - Review Dockerfile content carefully before building
-    # - Use trusted base images from official repositories
-    # - Scan built images for vulnerabilities
-    # - Limit network access during builds
-    # - Avoid including secrets in Dockerfile instructions
-    # - Use multi-stage builds to minimize final image size
+    # This tool provides the ability to build Docker images from Dockerfile
+    # content. It creates custom images by executing Dockerfile instructions
+    # and supports comprehensive build configuration including tagging and
+    # build arguments.
     #
     # == Features
     #
     # - Build images from Dockerfile content strings
-    # - Optional image tagging during build
-    # - Comprehensive error handling
-    # - Support for all standard Dockerfile instructions
-    # - Returns image ID and build status
+    # - Support for custom image tagging
+    # - Comprehensive build output and error reporting
+    # - Handles all standard Dockerfile instructions
+    # - Build context management
+    # - Progress tracking and logging
+    #
+    # == Security Considerations
+    #
+    # Image building involves significant security risks:
+    # - **Code Execution**: Dockerfile RUN commands execute arbitrary code
+    # - **Network Access**: Build process can access networks and repositories
+    # - **File System Access**: Can read local files and directories
+    # - **Credential Exposure**: May expose build-time secrets and credentials
+    # - **Supply Chain Risk**: Downloaded packages may contain malware
+    # - **Resource Consumption**: Builds can consume significant CPU, memory, and storage
+    #
+    # **Security Recommendations**:
+    # - Review all Dockerfile content before building
+    # - Use trusted base images only
+    # - Avoid embedding secrets in image layers
+    # - Implement build isolation and sandboxing
+    # - Monitor build resource consumption
+    # - Scan built images for vulnerabilities
+    # - Use multi-stage builds to minimize attack surface
+    #
+    # == Parameters
+    #
+    # - **dockerfile**: Dockerfile content as a string (required)
+    # - **tag**: Tag for the built image (optional, e.g., "myimage:latest")
     #
     # == Example Usage
     #
-    #   # Simple image build
-    #   BuildImage.call(
-    #     server_context: context,
-    #     dockerfile: "FROM alpine:latest\nRUN apk add --no-cache curl"
-    #   )
+    #   # Build simple image
+    #   dockerfile_content = <<~DOCKERFILE
+    #     FROM alpine:latest
+    #     RUN apk add --no-cache curl
+    #     CMD ["curl", "--version"]
+    #   DOCKERFILE
     #
-    #   # Build with custom tag
-    #   BuildImage.call(
+    #   response = BuildImage.call(
     #     server_context: context,
     #     dockerfile: dockerfile_content,
-    #     tag: "myapp:v1.0"
+    #     tag: "my-curl:latest"
     #   )
     #
-    # @see Docker::Image.build
-    # @see TagImage
+    #   # Build web server image
+    #   dockerfile_content = <<~DOCKERFILE
+    #     FROM nginx:alpine
+    #     COPY nginx.conf /etc/nginx/nginx.conf
+    #     EXPOSE 80
+    #     CMD ["nginx", "-g", "daemon off;"]
+    #   DOCKERFILE
+    #
+    #   response = BuildImage.call(
+    #     server_context: context,
+    #     dockerfile: dockerfile_content,
+    #     tag: "custom-nginx:v1.0"
+    #   )
+    #
+    # @see Docker::Image.build_from_dir
     # @since 0.1.0
-    class BuildImage < RubyLLM::Tool
+    BUILD_IMAGE_DEFINITION = ToolForge.define(:build_image) do
       description 'Build a Docker image'
 
-      param :dockerfile, type: :string, desc: 'Dockerfile content as a string'
-      param :tag, type: :string, desc: 'Tag for the built image (e.g., "myimage:latest")', required: false
+      param :dockerfile,
+            type: :string,
+            description: 'Dockerfile content as a string'
 
-      # Build a Docker image from Dockerfile content.
-      #
-      # This method creates a Docker image by building from the provided Dockerfile
-      # content string. The Dockerfile is processed by the Docker daemon and can
-      # include any valid Dockerfile instructions. Optionally, the resulting image
-      # can be tagged with a custom name for easy reference.
-      #
-      # @param dockerfile [String] the complete Dockerfile content as a string
-      # @param server_context [Object] RubyLLM context (unused but required)
-      # @param tag [String, nil] optional tag to apply to the built image
-      #
-      # @return [RubyLLM::Tool::Response] build results including image ID and tag info
-      #
-      # @raise [Docker::Error] for Docker daemon communication errors
-      # @raise [StandardError] for build failures or other errors
-      #
-      # @example Build simple image
-      #   dockerfile = <<~DOCKERFILE
-      #     FROM alpine:latest
-      #     RUN apk add --no-cache nginx
-      #     EXPOSE 80
-      #     CMD ["nginx", "-g", "daemon off;"]
-      #   DOCKERFILE
-      #
-      #   response = tool.execute(
-      #     dockerfile: dockerfile,
-      #     tag: "my-nginx:latest"
-      #   )
-      #
-      # @see Docker::Image.build
-      def execute(dockerfile:, tag: nil)
+      param :tag,
+            type: :string,
+            description: 'Tag for the built image (e.g., "myimage:latest")',
+            required: false
+
+      execute do |dockerfile:, tag: nil|
         # Build the image
-        image = ::Docker::Image.build(dockerfile)
+        image = Docker::Image.build(dockerfile)
 
         # If a tag was specified, tag the image
         if tag
@@ -101,11 +99,12 @@ module RubyLLM
 
         response_text = "Image built successfully. ID: #{image.id}"
         response_text += ", Tag: #{tag}" if tag
-
         response_text
       rescue StandardError => e
         "Error building image: #{e.message}"
       end
     end
+
+    BuildImage = BUILD_IMAGE_DEFINITION.to_ruby_llm_tool
   end
 end
