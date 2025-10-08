@@ -66,7 +66,9 @@ module RubyLLM
       param :name, desc: 'Container name (optional)', required: false
       param :cmd, desc: 'Command to run (optional)', required: false
       param :env,
-            desc: 'Environment variables as comma-separated KEY=VALUE pairs (optional, e.g., "VAR1=value1,VAR2=value2")', required: false
+            desc: 'Environment variables as comma-separated KEY=VALUE pairs ' \
+                  '(optional, e.g., "VAR1=value1,VAR2=value2")',
+            required: false
       param :exposed_ports, desc: 'Exposed ports as JSON object (optional)', required: false
       param :host_config, desc: 'Host configuration including port bindings, volumes, etc.',
                           required: false

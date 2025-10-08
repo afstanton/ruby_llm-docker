@@ -68,7 +68,9 @@ module RubyLLM
       param :user, type: :string, desc: 'User to run the command as (optional, e.g., "1000" or "username")',
                    required: false
       param :env, type: :string,
-                  desc: 'Environment variables as comma-separated KEY=VALUE pairs (optional, e.g., "VAR1=value1,VAR2=value2")', required: false
+                  desc: 'Environment variables as comma-separated KEY=VALUE pairs ' \
+                        '(optional, e.g., "VAR1=value1,VAR2=value2")',
+                  required: false
       param :stdin, type: :string, desc: 'Input to send to the command via stdin (optional)', required: false
       param :timeout, type: :integer, desc: 'Timeout in seconds (optional, default: 60)', required: false
 

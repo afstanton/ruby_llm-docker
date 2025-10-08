@@ -11,7 +11,8 @@ Gem::Specification.new do |spec|
   spec.summary = 'Docker management tools for RubyLLM - comprehensive container, image, network, and volume operations'
   spec.description = 'A comprehensive Ruby gem that provides Docker management capabilities through RubyLLM tools. ' \
                      'Enables AI assistants to interact with Docker containers, images, networks, and volumes using ' \
-                     'natural language. Ported from DockerMCP to work directly with RubyLLM without requiring an external MCP server.'
+                     'natural language. Ported from DockerMCP to work directly with RubyLLM without requiring an ' \
+                     'external MCP server.'
   spec.homepage = 'https://github.com/afstanton/ruby_llm-docker'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2.0'
