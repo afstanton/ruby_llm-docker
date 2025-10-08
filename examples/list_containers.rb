@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 # Example: Using RubyLLM with Docker ListContainers tool
 # This script creates a chat with OpenAI and asks about Docker containers
