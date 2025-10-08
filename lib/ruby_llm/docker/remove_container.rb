@@ -56,7 +56,7 @@ module RubyLLM
     #
     # @see Docker::Container#remove
     # @since 0.1.0
-    REMOVE_CONTAINER_DEFINITION = ToolForge.define(:remove_container) do
+    REMOVE_CONTAINER_DEFINITION = ::ToolForge.define(:remove_container) do
       description 'Remove a Docker container'
 
       param :id,

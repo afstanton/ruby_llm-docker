@@ -53,7 +53,7 @@ module RubyLLM
     #
     # @see Docker::Container#stop
     # @since 0.1.0
-    STOP_CONTAINER_DEFINITION = ToolForge.define(:stop_container) do
+    STOP_CONTAINER_DEFINITION = ::ToolForge.define(:stop_container) do
       description 'Stop a Docker container'
 
       param :id,

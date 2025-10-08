@@ -73,7 +73,7 @@ module RubyLLM
     #
     # @see Docker::Container#exec
     # @since 0.1.0
-    EXEC_CONTAINER_DEFINITION = ToolForge.define(:exec_container) do
+    EXEC_CONTAINER_DEFINITION = ::ToolForge.define(:exec_container) do
       description 'Execute a command inside a running Docker container. ' \
                   'WARNING: This provides arbitrary command execution within the container. ' \
                   'Ensure proper security measures are in place.'

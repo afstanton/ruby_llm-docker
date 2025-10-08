@@ -63,7 +63,7 @@ module RubyLLM
     #
     # @see Docker::Container#archive_in_stream
     # @since 0.1.0
-    COPY_TO_CONTAINER_DEFINITION = ToolForge.define(:copy_to_container) do
+    COPY_TO_CONTAINER_DEFINITION = ::ToolForge.define(:copy_to_container) do
       description 'Copy a file or directory from the local filesystem into a running Docker container. ' \
                   'The source path is on the local machine, and the destination path is inside the container.'
 

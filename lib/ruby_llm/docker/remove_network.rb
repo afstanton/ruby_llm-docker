@@ -60,7 +60,7 @@ module RubyLLM
     #
     # @see Docker::Network#delete
     # @since 0.1.0
-    REMOVE_NETWORK_DEFINITION = ToolForge.define(:remove_network) do
+    REMOVE_NETWORK_DEFINITION = ::ToolForge.define(:remove_network) do
       description 'Remove a Docker network'
 
       param :id,

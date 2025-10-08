@@ -73,7 +73,7 @@ module RubyLLM
     #
     # @see Docker::Volume.create
     # @since 0.1.0
-    CREATE_VOLUME_DEFINITION = ToolForge.define(:create_volume) do
+    CREATE_VOLUME_DEFINITION = ::ToolForge.define(:create_volume) do
       description 'Create a Docker volume'
 
       param :name,

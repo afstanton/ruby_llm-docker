@@ -64,7 +64,7 @@ module RubyLLM
     #
     # @see Docker::Image#remove
     # @since 0.1.0
-    REMOVE_IMAGE_DEFINITION = ToolForge.define(:remove_image) do
+    REMOVE_IMAGE_DEFINITION = ::ToolForge.define(:remove_image) do
       description 'Remove a Docker image'
 
       param :id,

@@ -64,7 +64,7 @@ module RubyLLM
     #
     # @see Docker::Image.create
     # @since 0.1.0
-    PULL_IMAGE_DEFINITION = ToolForge.define(:pull_image) do
+    PULL_IMAGE_DEFINITION = ::ToolForge.define(:pull_image) do
       description 'Pull a Docker image'
 
       param :from_image,

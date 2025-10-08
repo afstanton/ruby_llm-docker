@@ -46,7 +46,7 @@ module RubyLLM
     #
     # @see Docker::Network.all
     # @since 0.1.0
-    LIST_NETWORKS_DEFINITION = ToolForge.define(:list_networks) do
+    LIST_NETWORKS_DEFINITION = ::ToolForge.define(:list_networks) do
       description 'List Docker networks'
 
       execute do
