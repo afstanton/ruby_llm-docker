@@ -27,15 +27,8 @@ module RubyLLM
     class ListContainers < RubyLLM::Tool
       description 'List Docker containers'
 
-      input_schema(
-        properties: {
-          all: {
-            type: 'boolean',
-            description: 'Show all containers (default shows all containers including stopped ones)'
-          }
-        },
-        required: []
-      )
+      param :all, type: :boolean, desc: 'Show all containers (default shows all containers including stopped ones)',
+                  required: false
 
       # List all Docker containers with detailed information.
       #
@@ -57,11 +50,9 @@ module RubyLLM
       #   # Returns detailed info for all containers
       #
       # @see Docker::Container.all
-      def self.call(server_context:, all: true)
-        RubyLLM::Tool::Response.new([{
-                                      type: 'text',
-                                      text: Docker::Container.all(all: all).map(&:info).to_s
-                                    }])
+      def execute(all: true)
+        require 'docker'
+        ::Docker::Container.all(all: all).map(&:info).to_s
       end
     end
   end
