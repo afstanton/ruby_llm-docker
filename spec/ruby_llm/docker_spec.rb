@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe RubyLlm::Docker do
+RSpec.describe RubyLLM::Docker do
   it 'has a version number' do
-    expect(RubyLlm::Docker::VERSION).not_to be_nil
+    expect(RubyLLM::Docker::VERSION).not_to be_nil
   end
 end

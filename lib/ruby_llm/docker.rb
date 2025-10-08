@@ -9,7 +9,7 @@ loader.setup
 
 require_relative 'docker/version'
 
-module RubyLlm
+module RubyLLM
   module Docker
     class Error < StandardError; end
     # Your code goes here...

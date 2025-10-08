@@ -4,7 +4,7 @@ require_relative 'lib/ruby_llm/docker/version'
 
 Gem::Specification.new do |spec|
   spec.name = 'ruby_llm-docker'
-  spec.version = RubyLlm::Docker::VERSION
+  spec.version = RubyLLM::Docker::VERSION
   spec.authors = ['Aaron F Stanton']
   spec.email = ['afstanton@gmail.com']
 
