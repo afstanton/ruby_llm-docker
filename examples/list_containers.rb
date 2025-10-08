@@ -12,6 +12,10 @@ unless ENV['OPENAI_API_KEY']
   exit 1
 end
 
+RubyLLM.configure do |config|
+  config.openai_api_key = ENV.fetch('OPENAI_API_KEY', nil)
+end
+
 begin
   # Create a new RubyLLM chat instance
   chat = RubyLLM.chat(model: 'gpt-4')
